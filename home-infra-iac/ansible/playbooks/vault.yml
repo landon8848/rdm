@@ -1,0 +1,5 @@
+---
+- name: Install and configure HashiCorp Vault
+  hosts: vault
+  roles:
+    - vault

@@ -1,0 +1,171 @@
+---
+# ── Install ────────────────────────────────────────────────────────────────────
+
+- name: Add HashiCorp GPG key
+  get_url:
+    url: https://apt.releases.hashicorp.com/gpg
+    dest: /usr/share/keyrings/hashicorp-archive-keyring.asc
+    mode: '0644'
+
+- name: Add HashiCorp apt repository
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.asc] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+    filename: hashicorp
+    state: present
+
+- name: Install Vault
+  apt:
+    name: vault
+    state: present
+    update_cache: yes
+
+# ── TLS ────────────────────────────────────────────────────────────────────────
+
+- name: Create TLS directory
+  file:
+    path: "{{ vault_tls_dir }}"
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0750'
+
+- name: Check if TLS cert exists
+  stat:
+    path: "{{ vault_tls_dir }}/vault.crt"
+  register: vault_cert
+
+- name: Generate self-signed TLS certificate
+  command: >
+    openssl req -x509 -newkey rsa:4096
+    -keyout {{ vault_tls_dir }}/vault.key
+    -out {{ vault_tls_dir }}/vault.crt
+    -days 3650 -nodes
+    -subj "/CN=vault.{{ domain }}"
+    -addext "subjectAltName=DNS:vault.{{ domain }},IP:{{ vault_ip }}"
+  when: not vault_cert.stat.exists
+  notify: restart vault
+
+- name: Set TLS cert ownership
+  file:
+    path: "{{ item }}"
+    owner: vault
+    group: vault
+    mode: '0640'
+  loop:
+    - "{{ vault_tls_dir }}/vault.crt"
+    - "{{ vault_tls_dir }}/vault.key"
+
+# ── Configure ──────────────────────────────────────────────────────────────────
+
+- name: Create Raft data directory
+  file:
+    path: "{{ vault_data_dir }}"
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0750'
+
+- name: Deploy vault.hcl
+  template:
+    src: vault.hcl.j2
+    dest: "{{ vault_config_dir }}/vault.hcl"
+    owner: vault
+    group: vault
+    mode: '0640'
+  notify: restart vault
+
+- name: Enable and start Vault
+  systemd:
+    name: vault
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Flush handlers (ensure Vault is running with latest config)
+  meta: flush_handlers
+
+- name: Wait for Vault to be ready
+  uri:
+    url: "https://127.0.0.1:8200/v1/sys/health"
+    validate_certs: no
+    status_code: [200, 429, 472, 473, 501, 503]
+  retries: 12
+  delay: 5
+  register: vault_health
+
+# ── Init & Unseal ──────────────────────────────────────────────────────────────
+
+- name: Check Vault init status
+  command: vault status -format=json
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  register: vault_status_raw
+  failed_when: vault_status_raw.rc not in [0, 2]
+  changed_when: false
+
+- name: Parse Vault status
+  set_fact:
+    vault_status: "{{ vault_status_raw.stdout | from_json }}"
+
+- name: Initialize Vault
+  command: >
+    vault operator init
+    -key-shares={{ vault_key_shares }}
+    -key-threshold={{ vault_key_threshold }}
+    -format=json
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  register: vault_init_output
+  no_log: true
+  when: not vault_status.initialized
+
+- name: Ensure local vault/ directory exists
+  file:
+    path: "{{ playbook_dir }}/../vault"
+    state: directory
+    mode: '0700'
+  delegate_to: localhost
+  become: false
+  when: not vault_status.initialized
+
+- name: Save Vault init output locally
+  copy:
+    content: "{{ vault_init_output.stdout }}"
+    dest: "{{ playbook_dir }}/../vault/vault-init.json"
+    mode: '0600'
+  delegate_to: localhost
+  become: false
+  no_log: true
+  when: not vault_status.initialized
+
+- name: Load unseal keys from local init file
+  set_fact:
+    vault_init: "{{ lookup('file', playbook_dir + '/../vault/vault-init.json') | from_json }}"
+  no_log: true
+  when: vault_status.sealed
+
+- name: Unseal Vault
+  command: "vault operator unseal {{ item }}"
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  loop: "{{ vault_init.unseal_keys_b64[:vault_key_threshold] }}"
+  no_log: true
+  when: vault_status.sealed
+
+- name: Confirm Vault is unsealed
+  command: vault status -format=json
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  register: vault_final_status_raw
+  failed_when: false
+  changed_when: false
+
+- name: Report Vault status
+  debug:
+    msg: >-
+      Vault initialized={{ (vault_final_status_raw.stdout | from_json).initialized }},
+      sealed={{ (vault_final_status_raw.stdout | from_json).sealed }}

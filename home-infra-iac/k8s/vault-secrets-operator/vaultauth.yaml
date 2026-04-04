@@ -1,0 +1,21 @@
+# ServiceAccount that VSO will impersonate to authenticate against Vault.
+# The Vault Kubernetes auth role is bound to this SA.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-auth
+  namespace: cert-manager
+---
+# VaultAuth tells VSO how to authenticate to Vault for this namespace.
+# Uses the Kubernetes auth method with the vault-auth ServiceAccount.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: cert-manager
+spec:
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: cert-manager
+    serviceAccount: vault-auth

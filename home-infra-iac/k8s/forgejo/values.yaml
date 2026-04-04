@@ -1,0 +1,47 @@
+image:
+  registry: "codeberg.org"
+  repository: "forgejo/forgejo"
+  tag: "10"
+  rootless: true
+
+gitea:
+  admin:
+    existingSecret: forgejo-admin-secret
+
+  config:
+    server:
+      DOMAIN: git.example.com
+      ROOT_URL: https://git.example.com/
+      SSH_DOMAIN: git.example.com
+      SSH_PORT: 22
+      SSH_LISTEN_PORT: 2222
+    database:
+      DB_TYPE: sqlite3
+    cache:
+      ADAPTER: memory
+    queue:
+      TYPE: level
+    session:
+      PROVIDER: memory
+    service:
+      DISABLE_REGISTRATION: true
+
+# Disable heavyweight dependencies — SQLite + memory is fine for a homelab
+postgresql-ha:
+  enabled: false
+valkey-cluster:
+  enabled: false
+
+persistence:
+  enabled: true
+  size: 20Gi
+  storageClass: local-path
+
+service:
+  http:
+    type: ClusterIP
+    port: 3000
+  ssh:
+    type: ClusterIP
+    port: 22
+    targetPort: 2222

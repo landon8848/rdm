@@ -1,0 +1,11 @@
+# Local DNS records for {{ domain }}
+# Managed by Ansible — do not edit manually
+
+# Wildcard: all *.{{ domain }} resolves to Traefik by default.
+# New Kubernetes services are automatically reachable without touching this file.
+address=/.{{ domain }}/{{ traefik_ip }}
+
+# Direct overrides for infrastructure VMs not behind Traefik
+{% for host in dns_direct_hosts %}
+address=/{{ host.name }}.{{ domain }}/{{ host.ip }}
+{% endfor %}

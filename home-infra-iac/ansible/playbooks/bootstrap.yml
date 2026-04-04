@@ -1,0 +1,5 @@
+---
+- name: Bootstrap all VMs with common configuration
+  hosts: all
+  roles:
+    - common

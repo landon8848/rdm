@@ -1,0 +1,54 @@
+deployment:
+  replicas: 2
+
+service:
+  type: LoadBalancer
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.1.200"
+
+ports:
+  web:
+    port: 8000
+    exposedPort: 80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    port: 8443
+    exposedPort: 443
+  ssh:
+    port: 2022
+    exposedPort: 22
+    protocol: TCP
+    expose:
+      default: true
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+providers:
+  kubernetesCRD:
+    enabled: true
+    allowCrossNamespace: true
+  kubernetesIngress:
+    enabled: true
+    publishedService:
+      enabled: true
+
+tlsOptions:
+  default:
+    minVersion: VersionTLS12
+    sniStrict: true
+
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true
+
+additionalArguments:
+  - "--serversTransport.insecureSkipVerify=true"

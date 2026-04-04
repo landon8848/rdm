@@ -1,0 +1,4 @@
+defaultVaultConnection:
+  enabled: true
+  address: "https://192.168.1.191:8200"
+  caCertSecretRef: "vault-ca-cert"

@@ -1,0 +1,40 @@
+---
+timezone: America/Chicago
+
+domain: example.com
+
+# Traefik ingress IP — all *.example.com resolves here by default
+traefik_ip: 192.168.1.200
+
+# Hosts that bypass Traefik and go directly to their VM IP
+dns_direct_hosts:
+  - { name: pihole-01,  ip: 192.168.1.190 }
+  - { name: vault,      ip: 192.168.1.191 }
+  - { name: k0sm-00,    ip: 192.168.1.192 }
+  - { name: k0sw-00,    ip: 192.168.1.193 }
+  - { name: k0sw-01,    ip: 192.168.1.194 }
+  - { name: prox,       ip: 192.168.1.180 }
+  - { name: hass,       ip: 192.168.1.43  }  
+
+vault_addr: "https://192.168.1.191:8200"
+vault_ca_cert: "/usr/local/share/ca-certificates/rdm-ca.crt"
+vault_ca_cert_content: "{{ lookup('file', '~/.vault-ca.crt') }}"
+
+upstream_dns:
+  - 208.67.222.222   # OpenDNS primary (DNSSEC)
+  - 208.67.220.220   # OpenDNS secondary (DNSSEC)
+
+base_packages:
+  - curl
+  - wget
+  - git
+  - vim
+  - htop
+  - net-tools
+  - dnsutils
+  - unattended-upgrades
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - qemu-guest-agent
+  - python3-pip

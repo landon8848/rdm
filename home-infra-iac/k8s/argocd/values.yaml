@@ -1,0 +1,13 @@
+global:
+  domain: argo.example.com
+
+configs:
+  params:
+    # Traefik handles TLS — ArgoCD serves plain HTTP internally
+    server.insecure: "true"
+  cm:
+    url: https://argo.example.com
+
+server:
+  ingress:
+    enabled: false  # Using Traefik IngressRoute

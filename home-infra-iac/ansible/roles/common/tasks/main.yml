@@ -1,0 +1,73 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install base packages
+  apt:
+    name: "{{ base_packages }}"
+    state: present
+
+- name: Check for virtio-serial guest agent device
+  stat:
+    path: /dev/virtio-ports/org.qemu.guest_agent.0
+  register: virtio_device
+
+- name: Enable and start qemu-guest-agent
+  systemd:
+    name: qemu-guest-agent
+    enabled: yes
+    state: started
+  when: virtio_device.stat.exists
+
+- name: Grant myadmin passwordless sudo
+  copy:
+    dest: /etc/sudoers.d/myadmin
+    content: "myadmin ALL=(ALL) NOPASSWD:ALL\n"
+    mode: '0440'
+    validate: 'visudo -cf %s'
+
+- name: Set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Ensure hostname is in /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ inventory_hostname }}.{{ domain }} {{ inventory_hostname }}"
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+
+- name: Disable SSH password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+  notify: restart sshd
+
+- name: Configure unattended-upgrades for security updates
+  copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+    mode: '0644'
+
+- name: Install hvac Python library for Vault integration
+  pip:
+    name: hvac
+    state: present
+    executable: pip3
+    extra_args: "--break-system-packages"
+
+- name: Deploy rdm internal CA certificate
+  copy:
+    content: "{{ vault_ca_cert_content }}"
+    dest: /usr/local/share/ca-certificates/rdm-ca.crt
+    mode: '0644'
+  notify: update ca-certificates

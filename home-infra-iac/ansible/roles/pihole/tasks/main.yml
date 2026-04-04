@@ -1,0 +1,66 @@
+---
+- name: Read pihole admin password from Vault
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    path: pihole/admin
+    ca_cert: "{{ vault_ca_cert }}"
+    token: "{{ vault_token }}"
+  register: pihole_vault_secret
+  no_log: true
+
+- name: Set pihole admin password
+  command: pihole setpassword "{{ pihole_vault_secret.secret.password }}"
+  no_log: true
+  changed_when: false
+
+- name: Create /etc/pihole directory
+  file:
+    path: /etc/pihole
+    state: directory
+    mode: '0755'
+
+- name: Deploy setupVars.conf for unattended install
+  template:
+    src: setupVars.conf.j2
+    dest: /etc/pihole/setupVars.conf
+    mode: '0644'
+
+- name: Check if Pi-hole is already installed
+  stat:
+    path: /usr/local/bin/pihole
+  register: pihole_binary
+
+- name: Download Pi-hole installer
+  get_url:
+    url: https://install.pi-hole.net
+    dest: /tmp/pihole-install.sh
+    mode: '0755'
+  when: not pihole_binary.stat.exists
+
+- name: Run Pi-hole unattended installer
+  command: bash /tmp/pihole-install.sh --unattended
+  when: not pihole_binary.stat.exists
+  notify: restart pihole-FTL
+
+- name: Check misc.etc_dnsmasq_d setting in PiHole v6
+  command: pihole-FTL --config misc.etc_dnsmasq_d
+  register: pihole_dnsmasq_d
+  changed_when: false
+
+- name: Enable loading of /etc/dnsmasq.d/ in PiHole v6
+  command: pihole-FTL --config misc.etc_dnsmasq_d true
+  when: pihole_dnsmasq_d.stdout.strip() != 'true'
+  notify: restart pihole-FTL
+
+- name: Deploy local DNS records for the cluster
+  template:
+    src: rdm.local.conf.j2
+    dest: /etc/dnsmasq.d/99-rdm-local.conf
+    mode: '0644'
+  notify: restart pihole-FTL
+
+- name: Ensure pihole-FTL is enabled and running
+  systemd:
+    name: pihole-FTL
+    enabled: yes
+    state: started
