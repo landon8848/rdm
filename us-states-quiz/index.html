@@ -299,7 +299,7 @@
 
   <div class="states-card">
     <div class="states-card-header">
-      <h2>States</h2>
+      <h2>States Found</h2>
       <span id="miss-count"></span>
     </div>
     <div class="states-grid" id="states-grid"></div>
@@ -365,26 +365,34 @@ const missCountEl  = document.getElementById('miss-count');
 // ── Build state grid ─────────────────────────────────────────────
 function buildGrid() {
   gridEl.innerHTML = '';
-  ALL_STATES.forEach(name => {
-    const cell = document.createElement('div');
-    cell.className = 'state-cell';
-    cell.id = cellId(name);
-
-    const check = document.createElement('span');
-    check.className = 'check';
-    check.textContent = '';  // filled when found
-
-    const label = document.createElement('span');
-    label.textContent = name;
-
-    cell.appendChild(check);
-    cell.appendChild(label);
-    gridEl.appendChild(cell);
-  });
 }
 
 function cellId(name) {
   return 'cell-' + name.replace(/\s+/g, '-');
+}
+
+function makeCell(name, cls) {
+  const cell = document.createElement('div');
+  cell.className = 'state-cell ' + cls;
+  cell.id = cellId(name);
+
+  const check = document.createElement('span');
+  check.className = 'check';
+  check.textContent = cls === 'found' ? '✓' : '✗';
+
+  const label = document.createElement('span');
+  label.textContent = name;
+
+  cell.appendChild(check);
+  cell.appendChild(label);
+  return cell;
+}
+
+// Insert a cell in alphabetical order among existing cells
+function insertCellSorted(cell, name) {
+  const existing = Array.from(gridEl.children);
+  const after = existing.find(el => el.querySelector('span:last-child').textContent > name);
+  gridEl.insertBefore(cell, after || null);
 }
 
 // ── Timer ────────────────────────────────────────────────────────
@@ -423,12 +431,8 @@ function markFound(name) {
   const fips = NAME_TO_FIPS[name];
   d3.select(`#path-${fips}`).classed('found', true);
 
-  // Update grid cell
-  const cell = document.getElementById(cellId(name));
-  if (cell) {
-    cell.classList.add('found');
-    cell.querySelector('.check').textContent = '✓';
-  }
+  // Add cell to grid in sorted position
+  insertCellSorted(makeCell(name, 'found'), name);
 
   // Update counter & progress
   const n = foundStates.size;
@@ -465,8 +469,7 @@ function endGame(won) {
     missed.forEach(name => {
       const fips = NAME_TO_FIPS[name];
       d3.select(`#path-${fips}`).classed('missed', true);
-      const cell = document.getElementById(cellId(name));
-      if (cell) cell.classList.add('missed');
+      insertCellSorted(makeCell(name, 'missed'), name);
     });
 
     missCountEl.textContent = `${missed.length} missed`;
