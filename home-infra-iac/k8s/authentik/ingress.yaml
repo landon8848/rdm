@@ -1,0 +1,51 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authentik-tls
+  namespace: authentik
+spec:
+  secretName: authentik-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - auth.example.com
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: authentik
+  namespace: authentik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # Main Authentik UI and API — no ForwardAuth on the IdP itself
+    - match: Host(`auth.example.com`)
+      kind: Rule
+      services:
+        - name: authentik-server
+          port: 80
+  tls:
+    secretName: authentik-tls
+---
+# Outpost route — handles ForwardAuth callbacks for protected services.
+# The outpost intercepts /outpost.goauthentik.io/ paths on every protected
+# domain, so this route must match broadly. Each protected service's
+# IngressRoute references the authentik-forwardauth middleware (see middleware.yaml).
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: authentik-outpost
+  namespace: authentik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: PathPrefix(`/outpost.goauthentik.io/`)
+      kind: Rule
+      services:
+        - name: ak-outpost-authentik-embedded-outpost
+          port: 9000
+  tls:
+    secretName: authentik-tls

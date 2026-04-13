@@ -4,9 +4,9 @@
 # Safe to re-run — cert-manager won't re-issue until renewBefore window.
 set -euo pipefail
 
-export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/rdm-k0s.config}"
+export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/my-k0s.config}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VAULT_HOST="192.168.1.191"
+VAULT_HOST="192.168.1.140"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 
 # ── Issue cert via cert-manager ────────────────────────────────────────────────
@@ -48,15 +48,15 @@ sleep 5
 
 # ── Update VSO to trust the internal CA ───────────────────────────────────────
 echo "==> Creating CA cert secret for VSO"
-kubectl get secret rdm-ca-secret -n cert-manager \
-  -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/rdm-ca.crt
+kubectl get secret my-ca-secret -n cert-manager \
+  -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/my-ca.crt
 
 kubectl create secret generic vault-ca-cert \
-  --from-file=ca.crt=/tmp/rdm-ca.crt \
+  --from-file=ca.crt=/tmp/my-ca.crt \
   --namespace vault-secrets-operator-system \
   --dry-run=client -o yaml | kubectl apply -f -
 
-rm /tmp/rdm-ca.crt
+rm /tmp/my-ca.crt
 
 echo "==> Patching VaultConnection to use CA cert"
 kubectl patch vaultconnection default -n vault-secrets-operator-system \

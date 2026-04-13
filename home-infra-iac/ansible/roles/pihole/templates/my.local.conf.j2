@@ -9,3 +9,8 @@ address=/.{{ domain }}/{{ traefik_ip }}
 {% for host in dns_direct_hosts %}
 address=/{{ host.name }}.{{ domain }}/{{ host.ip }}
 {% endfor %}
+
+# CNAME aliases
+{% for c in dns_cnames | default([]) %}
+cname={{ c.alias }}.{{ domain }},{{ c.target }}
+{% endfor %}

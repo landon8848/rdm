@@ -23,3 +23,6 @@
 
 # Vault
 ansible/vault/vault-init.json
+
+# git
+../public_staging/

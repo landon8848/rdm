@@ -1,17 +1,17 @@
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
-  name: rdm-pool
+  name: my-pool
   namespace: metallb-system
 spec:
   addresses:
-    - 192.168.1.200-192.168.1.230
+    - 192.168.1.87-192.168.1.174
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
 metadata:
-  name: rdm-l2
+  name: my-l2
   namespace: metallb-system
 spec:
   ipAddressPools:
-    - rdm-pool
+    - my-pool

@@ -1,5 +1,5 @@
-proxmox_endpoint  = "https://192.168.1.180:8006/"
-proxmox_api_token = "tfbuilduser@pve!terraform_2025=<YOUR_TOKEN_SECRET>"
+proxmox_endpoint  = "https://192.168.1.148:8006/"
+proxmox_api_token = "USER@pve!TOKEN=redacted"
 proxmox_insecure  = true  # Proxmox uses a self-signed cert by default
 
 proxmox_node   = "prox"

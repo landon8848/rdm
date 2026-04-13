@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Bootstrap Vault Secrets Operator integration.
-# Usage: CLOUDFLARE_API_TOKEN=<token> ./scripts/bootstrap-vso.sh
+# Usage: DNS_API_TOKEN=<token> ./scripts/bootstrap-vso.sh
 set -euo pipefail
 
-export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/rdm-k0s.config}"
+export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/my-k0s.config}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VAULT_HOST="192.168.1.191"
+VAULT_HOST="192.168.1.140"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 INIT_FILE="$REPO_ROOT/ansible/vault/vault-init.json"
 
-if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
-  echo "Error: CLOUDFLARE_API_TOKEN is not set"
-  echo "Usage: CLOUDFLARE_API_TOKEN=<token> $0"
+if [[ -z "${DNS_API_TOKEN:-}" ]]; then
+  echo "Error: DNS_API_TOKEN is not set"
+  echo "Usage: DNS_API_TOKEN=<token> $0"
   exit 1
 fi
 
@@ -59,9 +59,9 @@ ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no myadmin@$VAULT_HOST \
      kubernetes_ca_cert=@/tmp/k8s-ca.crt \
      token_reviewer_jwt='$REVIEWER_JWT' && rm /tmp/k8s-ca.crt"
 
-# ── Vault: Store Cloudflare token ──────────────────────────────────────────────
-echo "==> Storing Cloudflare API token in Vault"
-vault_cmd "kv put secret/cert-manager/cloudflare api-token='$CLOUDFLARE_API_TOKEN'"
+# ── Vault: Store dns-provider token ──────────────────────────────────────────────
+echo "==> Storing dns-provider API token in Vault"
+vault_cmd "kv put secret/cert-manager/dns-provider api-token='$DNS_API_TOKEN'"
 
 # ── Vault: Policy ─────────────────────────────────────────────────────────────
 echo "==> Writing cert-manager Vault policy"
@@ -98,13 +98,13 @@ helm upgrade --install vault-secrets-operator hashicorp/vault-secrets-operator \
 echo "==> Applying VaultAuth for cert-manager"
 kubectl apply -f "$REPO_ROOT/k8s/vault-secrets-operator/vaultauth.yaml"
 
-echo "==> Applying VaultStaticSecret for Cloudflare token"
-kubectl apply -f "$REPO_ROOT/k8s/cert-manager/cloudflare-secret.yaml"
+echo "==> Applying VaultStaticSecret for dns-provider token"
+kubectl apply -f "$REPO_ROOT/k8s/cert-manager/dns-provider-secret.yaml"
 
 echo ""
-echo "==> Waiting for Cloudflare secret to sync"
+echo "==> Waiting for dns-provider secret to sync"
 sleep 5
-kubectl get secret cloudflare-api-token -n cert-manager \
+kubectl get secret dns-api-token -n cert-manager \
   -o jsonpath='{.data.api-token}' | base64 -d | grep -q . \
   && echo "  Secret synced successfully" \
   || echo "  Secret not yet synced — check: kubectl describe vaultstaticsecret -n cert-manager"

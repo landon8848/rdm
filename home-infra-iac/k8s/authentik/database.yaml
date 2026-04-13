@@ -1,0 +1,49 @@
+# CloudNativePG Cluster for Authentik
+#
+# The CNPG operator (in cnpg-system) watches all namespaces for Cluster CRDs.
+# This creates a single-instance PostgreSQL 16 cluster in the authentik namespace.
+#
+# Connection details:
+#   Host: authentik-db-rw.authentik.svc.cluster.local
+#   Port: 5432
+#   Database: authentik
+#   User: authentik
+#   Password: from Vault via VSO (authentik-db-secret)
+#
+# CNPG expects the superuser secret to be a kubernetes.io/basic-auth Secret
+# with 'username' and 'password' keys. The VaultStaticSecret in vaultauth.yaml
+# syncs these from secret/authentik/db in Vault.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: authentik-db
+  namespace: authentik
+spec:
+  instances: 1
+
+  postgresql:
+    parameters:
+      shared_buffers: "128MB"
+      effective_cache_size: "256MB"
+      max_connections: "50"
+
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
+      secret:
+        name: authentik-db-secret
+
+  storage:
+    size: 5Gi
+    storageClass: local-path
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+  monitoring:
+    enablePodMonitor: true

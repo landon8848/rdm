@@ -15,7 +15,7 @@ locals {
     ssh_public_key = var.ssh_public_key
     # Once pihole-01 is up, it becomes primary DNS for the rest
     # Fallback: OpenDNS (DNSSEC-validating)
-    dns_servers = ["192.168.1.190", "208.67.222.222"]
+    dns_servers = ["192.168.1.6", "208.67.222.222"]
     # k0s nodes must NOT have example.com as a DNS search domain —
     # kubelet propagates it into pod resolv.conf, breaking external DNS resolution
     # via ndots:5 (external names get .example.com appended first,
@@ -31,7 +31,7 @@ module "pihole_01" {
   vm_id        = 206
   description  = "PiHole DNS server"
   tags         = ["infra", "dns"]
-  ip_address   = "192.168.1.190"
+  ip_address   = "192.168.1.6"
   cores        = 1
   memory_mb    = 1024
   disk_size_gb = 8
@@ -55,7 +55,7 @@ module "vault" {
   vm_id        = 205
   description  = "HashiCorp Vault secrets backend"
   tags         = ["infra", "secrets"]
-  ip_address   = "192.168.1.191"
+  ip_address   = "192.168.1.140"
   cores        = 2
   memory_mb    = 2048
   disk_size_gb = 20
@@ -78,7 +78,7 @@ module "k0sm_00" {
   vm_id        = 202
   description  = "k0s Kubernetes control plane"
   tags         = ["k8s", "control-plane"]
-  ip_address   = "192.168.1.192"
+  ip_address   = "192.168.1.247"
   cores        = 2
   memory_mb    = 4096
   disk_size_gb = 32
@@ -101,7 +101,7 @@ module "k0sw_00" {
   vm_id        = 203
   description  = "k0s Kubernetes worker node 0"
   tags         = ["k8s", "worker"]
-  ip_address   = "192.168.1.193"
+  ip_address   = "192.168.1.143"
   cores        = 4
   memory_mb    = 8192
   disk_size_gb = 64
@@ -117,6 +117,40 @@ module "k0sw_00" {
   ssh_public_key    = local.common.ssh_public_key
 }
 
+module "nfs_01" {
+  source = "./modules/proxmox_lxc"
+
+  name             = "nfs-01"
+  vm_id            = 207
+  description      = "NFS server — media storage (USB-backed)"
+  tags             = ["infra", "storage"]
+  ip_address       = "192.168.1.125"
+  cores            = 1
+  memory_mb        = 512
+  disk_size_gb     = 4
+  template_file_id = var.lxc_template_id
+
+  # Bind-mount the USB drive from the Proxmox host into the container.
+  # Prerequisites:
+  #   1. USB drive formatted and mounted at /mnt/media-usb on the Proxmox host
+  #   2. Entry in /etc/fstab on the host for persistence
+  mount_points = [
+    {
+      host_path      = "/mnt/media-usb"
+      container_path = "/mnt/media-usb"
+    }
+  ]
+
+  dns_servers       = local.common.dns_servers
+  dns_search_domain = "example.com"
+  node_name         = local.common.node_name
+  datastore         = local.common.datastore
+  bridge            = local.common.bridge
+  gateway           = local.common.gateway
+  cidr_prefix       = local.common.cidr_prefix
+  ssh_public_key    = local.common.ssh_public_key
+}
+
 module "k0sw_01" {
   source = "./modules/proxmox_vm"
 
@@ -124,7 +158,7 @@ module "k0sw_01" {
   vm_id        = 204
   description  = "k0s Kubernetes worker node 1"
   tags         = ["k8s", "worker"]
-  ip_address   = "192.168.1.194"
+  ip_address   = "192.168.1.135"
   cores        = 4
   memory_mb    = 6144
   disk_size_gb = 64

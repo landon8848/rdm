@@ -32,11 +32,17 @@
   hostname:
     name: "{{ inventory_hostname }}"
 
-- name: Ensure hostname is in /etc/hosts
+- name: Remove 127.0.1.1 loopback hostname entry
   lineinfile:
     path: /etc/hosts
-    regexp: '^127\.0\.1\.1'
-    line: "127.0.1.1 {{ inventory_hostname }}.{{ domain }} {{ inventory_hostname }}"
+    regexp: '^127\.0\.1\.1\s'
+    state: absent
+
+- name: Ensure hostname maps to real IP in /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^[0-9.]+\s+{{ inventory_hostname }}\.{{ domain }}\s'
+    line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}.{{ domain }} {{ inventory_hostname }}"
 
 - name: Set timezone
   timezone:
@@ -65,9 +71,9 @@
     executable: pip3
     extra_args: "--break-system-packages"
 
-- name: Deploy rdm internal CA certificate
+- name: Deploy my internal CA certificate
   copy:
     content: "{{ vault_ca_cert_content }}"
-    dest: /usr/local/share/ca-certificates/rdm-ca.crt
+    dest: /usr/local/share/ca-certificates/my-ca.crt
     mode: '0644'
   notify: update ca-certificates

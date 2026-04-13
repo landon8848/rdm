@@ -1,0 +1,109 @@
+# Authentik Helm values — goauthentik/authentik chart
+# Docs: https://docs.goauthentik.io/docs/install-config/install/kubernetes
+#
+# Helm install:
+#   helm repo add authentik https://charts.goauthentik.io
+#   helm install authentik authentik/authentik \
+#     --namespace authentik --create-namespace \
+#     --values k8s/authentik/values.yaml --wait --timeout 5m
+#
+# IMPORTANT: The CNPG operator must be installed and the Cluster CRD
+# (database.yaml) must be Ready before running helm install. See SETUP.md.
+
+global:
+  env:
+    # Secret key for signing cookies and tokens — sourced from Vault via VSO
+    - name: AUTHENTIK_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: authentik-admin-secret
+          key: secret_key
+    # Bootstrap admin credentials (initial setup only)
+    - name: AUTHENTIK_BOOTSTRAP_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: authentik-admin-secret
+          key: bootstrap_token
+    - name: AUTHENTIK_BOOTSTRAP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-admin-secret
+          key: bootstrap_password
+    - name: AUTHENTIK_BOOTSTRAP_EMAIL
+      valueFrom:
+        secretKeyRef:
+          name: authentik-admin-secret
+          key: bootstrap_email
+    # External PostgreSQL connection (CNPG-managed cluster)
+    - name: AUTHENTIK_POSTGRESQL__HOST
+      value: "authentik-db-rw.authentik.svc.cluster.local"
+    - name: AUTHENTIK_POSTGRESQL__PORT
+      value: "5432"
+    - name: AUTHENTIK_POSTGRESQL__NAME
+      value: "authentik"
+    - name: AUTHENTIK_POSTGRESQL__USER
+      value: "authentik"
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-secret
+          key: password
+
+# -------------------------------------------------------------------
+# Server (main Django application)
+# -------------------------------------------------------------------
+server:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+# -------------------------------------------------------------------
+# Worker (background tasks — OIDC token cleanup, outpost comms, etc.)
+# -------------------------------------------------------------------
+worker:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 384Mi
+    limits:
+      memory: 768Mi
+
+# -------------------------------------------------------------------
+# PostgreSQL — DISABLED (using CloudNativePG operator instead)
+# See k8s/authentik/database.yaml for the CNPG Cluster CRD.
+# -------------------------------------------------------------------
+postgresql:
+  enabled: false
+
+# -------------------------------------------------------------------
+# Redis (bundled subchart — Bitnami)
+# -------------------------------------------------------------------
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 1Gi
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+# -------------------------------------------------------------------
+# Authentik configuration
+# -------------------------------------------------------------------
+authentik:
+  error_reporting:
+    enabled: false
+  log_level: info

@@ -1,17 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cert-manager-config
+  name: cnpg-config
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: git@git.example.com:my/my-local.git
     targetRevision: main
-    path: k8s/cert-manager
+    path: k8s/cnpg
+    directory:
+      exclude: "{values.yaml,SETUP.md}"
   destination:
     server: https://kubernetes.default.svc
-    namespace: cert-manager
+    namespace: cnpg-system
   syncPolicy:
     automated:
       prune: true

@@ -6,7 +6,7 @@ metadata:
 spec:
   secretName: vault-tls
   issuerRef:
-    name: rdm-ca
+    name: my-ca
     kind: ClusterIssuer
   duration: 8760h    # 1 year
   renewBefore: 720h  # renew 30 days before expiry
@@ -14,4 +14,4 @@ spec:
     - "*.example.com"
     - example.com
   ipAddresses:
-    - 192.168.1.191
+    - 192.168.1.140

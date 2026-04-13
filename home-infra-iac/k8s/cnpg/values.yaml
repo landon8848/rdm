@@ -1,0 +1,21 @@
+# CloudNativePG Operator — Helm values
+# Chart: cloudnative-pg/cloudnative-pg
+# Docs: https://cloudnative-pg.io/documentation/
+#
+# Helm install:
+#   helm repo add cnpg https://cloudnative-pg.github.io/charts
+#   helm install cnpg cnpg/cloudnative-pg \
+#     --namespace cnpg-system --create-namespace \
+#     --values k8s/cnpg/values.yaml --wait
+
+# The operator is lightweight — single controller managing Cluster CRDs
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+# Monitoring — expose metrics for Prometheus scraping
+monitoring:
+  podMonitorEnabled: true

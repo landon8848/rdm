@@ -25,6 +25,8 @@ gitea:
       PROVIDER: memory
     service:
       DISABLE_REGISTRATION: true
+    webhook:
+      ALLOWED_HOST_LIST: "private,loopback,192.168.1.0/24"
 
 # Disable heavyweight dependencies — SQLite + memory is fine for a homelab
 postgresql-ha:

@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@git.example.com:rdm/rdm-local.git
+    repoURL: git@git.example.com:my/my-local.git
     targetRevision: main
     path: k8s/argocd
     directory:

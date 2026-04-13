@@ -6,7 +6,23 @@ configs:
     # Traefik handles TLS — ArgoCD serves plain HTTP internally
     server.insecure: "true"
   cm:
+    dex.config: ""
     url: https://argo.example.com
+    oidc.config: |
+      name: Authentik
+      issuer: https://auth.example.com/application/o/argo/
+      clientID: $argocd-oidc-secret:client_id
+      clientSecret: $argocd-oidc-secret:client_secret
+      requestedScopes:
+        - openid
+        - profile
+        - email
+  rbac:
+    policy.csv: |
+      g, authentik Admins, role:admin
+  ssh:
+    extraHosts: |
+      git.example.com ssh-rsa AAAA...REDACTED...
 
 server:
   ingress:

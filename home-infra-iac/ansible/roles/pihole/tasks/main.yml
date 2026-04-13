@@ -3,9 +3,10 @@
   community.hashi_vault.vault_kv2_get:
     url: "{{ vault_addr }}"
     path: pihole/admin
-    ca_cert: "{{ vault_ca_cert }}"
-    token: "{{ vault_token }}"
+    ca_cert: "{{ lookup('env', 'HOME') }}/.vault-ca.crt"
   register: pihole_vault_secret
+  delegate_to: localhost
+  become: false
   no_log: true
 
 - name: Set pihole admin password
@@ -54,8 +55,8 @@
 
 - name: Deploy local DNS records for the cluster
   template:
-    src: rdm.local.conf.j2
-    dest: /etc/dnsmasq.d/99-rdm-local.conf
+    src: my.local.conf.j2
+    dest: /etc/dnsmasq.d/99-my-local.conf
     mode: '0644'
   notify: restart pihole-FTL
 

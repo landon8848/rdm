@@ -1,24 +1,24 @@
 apiVersion: k0sctl.k0sproject.io/v1beta1
 kind: Cluster
 metadata:
-  name: rdm-k0s
+  name: my-k0s
 
 spec:
   hosts:
     - ssh:
-        address: 192.168.1.192
+        address: 192.168.1.247
         user: myadmin
         keyPath: ~/.ssh/id_ed25519
       role: controller
 
     - ssh:
-        address: 192.168.1.193
+        address: 192.168.1.143
         user: myadmin
         keyPath: ~/.ssh/id_ed25519
       role: worker
 
     - ssh:
-        address: 192.168.1.194
+        address: 192.168.1.135
         user: myadmin
         keyPath: ~/.ssh/id_ed25519
       role: worker
@@ -29,13 +29,13 @@ spec:
       apiVersion: k0s.k0sproject.io/v1beta1
       kind: ClusterConfig
       metadata:
-        name: rdm-k0s
+        name: my-k0s
       spec:
         api:
-          address: 192.168.1.192
-          externalAddress: 192.168.1.192
+          address: 192.168.1.247
+          externalAddress: 192.168.1.247
           sans:
-            - 192.168.1.192
+            - 192.168.1.247
             - k0sm-00.example.com
         network:
           podCIDR: "10.244.0.0/16"

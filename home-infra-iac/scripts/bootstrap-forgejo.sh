@@ -3,9 +3,9 @@
 # Usage: FORGEJO_ADMIN_PASSWORD=<password> ./scripts/bootstrap-forgejo.sh
 set -euo pipefail
 
-export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/rdm-k0s.config}"
+export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/my-k0s.config}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VAULT_HOST="192.168.1.191"
+VAULT_HOST="192.168.1.140"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 INIT_FILE="$REPO_ROOT/ansible/vault/vault-init.json"
 

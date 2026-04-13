@@ -10,12 +10,12 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: rdm-ca
+  name: my-ca
   namespace: cert-manager
 spec:
   isCA: true
   commonName: example.com
-  secretName: rdm-ca-secret
+  secretName: my-ca-secret
   duration: 87600h  # 10 years
   renewBefore: 720h
   privateKey:
@@ -29,13 +29,13 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: rdm-ca
+  name: my-ca
 spec:
   ca:
-    secretName: rdm-ca-secret
+    secretName: my-ca-secret
 ---
 # Let's Encrypt staging — safe for testing, won't hit LE rate limits.
-# Requires the cloudflare-api-token secret (see bootstrap-ingress.sh).
+# Requires the dns-api-token secret (see bootstrap-ingress.sh).
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -48,9 +48,9 @@ spec:
       name: letsencrypt-staging-key
     solvers:
       - dns01:
-          cloudflare:
+          dns-provider:
             apiTokenSecretRef:
-              name: cloudflare-api-token
+              name: dns-api-token
               key: api-token
 ---
 # Let's Encrypt production — flip issuerRef to this once staging validates.
@@ -66,7 +66,7 @@ spec:
       name: letsencrypt-prod-key
     solvers:
       - dns01:
-          cloudflare:
+          dns-provider:
             apiTokenSecretRef:
-              name: cloudflare-api-token
+              name: dns-api-token
               key: api-token
