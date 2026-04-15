@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plex
+  namespace: plex
+  labels:
+    app: plex
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: plex
+  template:
+    metadata:
+      labels:
+        app: plex
+    spec:
+      containers:
+        - name: plex
+          image: lscr.io/linuxserver/plex:1.41.4
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: America/Chicago
+            - name: VERSION
+              value: docker
+            - name: PLEX_CLAIM
+              valueFrom:
+                secretKeyRef:
+                  name: plex-claim-secret
+                  key: PLEX_CLAIM
+            # No-op on linuxserver/plex (only plexinc/pms-docker honors it),
+            # kept for intent. The real setting is Preferences.xml →
+            # customConnections, managed via Settings → Network → Custom server
+            # access URLs in the web UI.
+            # - name: ADVERTISE_IP
+            #   value: "https://plex.example.com:443"
+          ports:
+            - name: plex-web
+              containerPort: 32400
+              protocol: TCP
+          # Plex discovery ports (optional, LAN only)
+            - name: dlna-tcp
+              containerPort: 32469
+              protocol: TCP
+            - name: dlna-udp
+              containerPort: 1900
+              protocol: UDP
+            - name: gdm-1
+              containerPort: 32410
+              protocol: UDP
+            - name: gdm-2
+              containerPort: 32412
+              protocol: UDP
+            - name: gdm-3
+              containerPort: 32413
+              protocol: UDP
+            - name: gdm-4
+              containerPort: 32414
+              protocol: UDP
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /media
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /identity
+              port: 32400
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /identity
+              port: 32400
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 200m
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: plex-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: plex-media-nfs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plex
+  namespace: plex
+  labels:
+    app: plex
+spec:
+  selector:
+    app: plex
+  ports:
+    - name: web
+      port: 32400
+      targetPort: plex-web
+      protocol: TCP
+  type: ClusterIP
+---
+# Direct LAN access for Plex clients. LoadBalancer gives us a dedicated LAN IP
+# from the MetalLB pool so clients can hit an IP-based customConnections URL,
+# which Plex flags as "local" (hostname-based entries are always "remote").
+# externalTrafficPolicy: Local preserves the real client source IP so the
+# server can match it against allowedNetworks correctly.
+apiVersion: v1
+kind: Service
+metadata:
+  name: plex-lan
+  namespace: plex
+  labels:
+    app: plex
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.70
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: plex
+  ports:
+    - name: plex
+      port: 32400
+      targetPort: plex-web
+      protocol: TCP

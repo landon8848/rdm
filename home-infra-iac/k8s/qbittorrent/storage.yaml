@@ -1,0 +1,58 @@
+# NFS-backed persistent volume for qBittorrent's downloads directory.
+# Points at the downloads-only subtree of the nfs-01 LXC (192.168.1.125).
+# Plex mounts the media subtree separately — the two are deliberately
+# split so neither service sees the other's data. Note: the PV/PVC are
+# still named "media-nfs" for historical reasons; renaming would churn
+# the ArgoCD binding for no real benefit.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: media-nfs
+  labels:
+    app: media
+    type: nfs-storage
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.125
+    path: /mnt/my-nfs/downloads
+  mountOptions:
+    - nfsvers=4
+    - hard
+    - intr
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-nfs
+  namespace: qbittorrent
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 100Gi
+  selector:
+    matchLabels:
+      app: media
+      type: nfs-storage
+---
+# Separate PVC for qBittorrent config (local-path, survives NFS outage)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-config
+  namespace: qbittorrent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi

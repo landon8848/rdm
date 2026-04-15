@@ -1,0 +1,171 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: qbittorrent
+  labels:
+    app: qbittorrent
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      serviceAccountName: qbittorrent
+
+      # Init container: verify the NFS downloads volume is actually mounted
+      # and writable. If the USB drive is missing or the NFS server is down,
+      # the pod stays in Init rather than silently failing or writing to an
+      # empty mount. The expected layout (complete/, incomplete/, watch/) is
+      # created by the nfs role on the server side; we check one of them as
+      # proof the right share is mounted.
+      initContainers:
+        - name: wait-for-downloads
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              echo "Checking NFS downloads volume..."
+              if [ ! -d /downloads/complete ]; then
+                echo "ERROR: /downloads/complete not found — NFS volume may not be mounted."
+                exit 1
+              fi
+              if ! touch /downloads/.health-check; then
+                echo "ERROR: /downloads is not writable — NFS export may be read-only."
+                exit 1
+              fi
+              rm -f /downloads/.health-check
+              echo "NFS downloads volume is available and writable."
+          volumeMounts:
+            - name: downloads
+              mountPath: /downloads
+
+      containers:
+        # ── Gluetun VPN sidecar ──────────────────────────────────
+        - name: gluetun
+          image: qmcgaw/gluetun:v3.40
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: vpn-provider
+            - name: VPN_TYPE
+              value: wireguard
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: qbittorrent-vpn-secret
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: WIREGUARD_ADDRESSES
+              valueFrom:
+                secretKeyRef:
+                  name: qbittorrent-vpn-secret
+                  key: WIREGUARD_ADDRESSES
+            # ── Killswitch ──
+            # Gluetun's firewall is on by default. When the VPN tunnel
+            # drops, iptables rules block all non-local egress.
+            - name: FIREWALL
+              value: "on"
+            - name: FIREWALL_VPN_INPUT_PORTS
+              value: ""
+            - name: DOT
+              value: "off"
+            # Allow LAN + pod/service networks so Traefik and NFS work
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: "10.0.0.0/8,10.244.0.0/16,10.96.0.0/12"
+            - name: HEALTH_VPN_DURATION_INITIAL
+              value: "30s"
+            - name: HEALTH_TARGET_ADDRESS
+              value: "vpn-provider.net:443"
+          ports:
+            - name: gluetun-http
+              containerPort: 8000
+              protocol: TCP
+            # qBittorrent web UI port (exposed through Gluetun's netns)
+            - name: qbt-web
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /v1/openvpn/status
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /v1/openvpn/status
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 50m
+            limits:
+              memory: 256Mi
+
+        # ── qBittorrent ──────────────────────────────────────────
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent:5.0.4
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: America/Chicago
+            - name: WEBUI_PORT
+              value: "8080"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: downloads
+              mountPath: /downloads
+          # No ports here — qBittorrent shares Gluetun's network namespace.
+          # The web UI port (8080) is declared on the Gluetun container.
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: media-nfs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent
+  namespace: qbittorrent
+  labels:
+    app: qbittorrent
+spec:
+  selector:
+    app: qbittorrent
+  ports:
+    - name: web
+      port: 8080
+      targetPort: qbt-web
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: qbittorrent
+  namespace: qbittorrent

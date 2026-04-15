@@ -13,7 +13,7 @@ graph TB
         subgraph proxmox["Proxmox Host — prox (192.168.1.148)"]
             PiHole["Pi-hole VM\npihole-01 · 192.168.1.6\n\ndnsmasq wildcard:\n*.example.com → Traefik\nDirect: VMs bypass Traefik"]
             Vault["Vault VM\nvault · 192.168.1.140\n\nRaft storage\nKV secrets engine\nK8s auth method"]
-            NFS["NFS LXC\nnfs-01 · 192.168.1.125\n\nUSB-backed media storage\nNFS export: /mnt/media-usb"]
+            NFS["NFS LXC\nnfs-01 · 192.168.1.125\n\nUSB-backed xfs storage\nExports: downloads, media, dropbox\nunder /mnt/my-nfs"]
 
             subgraph k8s["k0s Kubernetes Cluster"]
                 subgraph cp["Control Plane — k0sm-00 (192.168.1.247)"]
@@ -45,8 +45,9 @@ graph TB
                     end
 
                     subgraph media["Media"]
-                        qBittorrent["qBittorrent + Gluetun\nqbit.example.com\nMullvad WireGuard VPN\nNFS media from nfs-01"]
+                        qBittorrent["qBittorrent + Gluetun\nqbit.example.com\nvpn-provider WireGuard VPN\nNFS media from nfs-01"]
                         Plex["Plex Media Server\nplex.example.com\nDirect play (no transcoding)\nNFS media from nfs-01"]
+                        PlexLAN["plex-lan Service\nLoadBalancer · 192.168.1.70\nexternalTrafficPolicy: Local\n\nDirect-LAN path for native\nclients (iOS/Roku/tvOS) so\nPlex marks the connection\nlocal (IP-based, not hostname)"]
                     end
                 end
             end
@@ -90,9 +91,11 @@ graph TB
     Traefik -->|"HTTPS routes"| ArgoCD
     Traefik -->|"HTTPS + SSH routes"| Forgejo
     Traefik -->|"HTTPS route"| qBittorrent
-    Traefik -->|"HTTPS route"| Plex
+    Traefik -->|"HTTPS route\n(web UI)"| Plex
     Traefik -->|"HTTPS route"| Authentik
     MetalLB -->|"LoadBalancer IP\n192.168.1.87"| Traefik
+    MetalLB -->|"LoadBalancer IP\n192.168.1.70"| PlexLAN
+    PlexLAN -->|"direct pod traffic\n(client IP preserved)"| Plex
 
     Authentik -->|"OIDC realm"| proxmox
 
@@ -113,7 +116,8 @@ graph TB
 | Forgejo | `https://git.example.com` | 192.168.1.87 |
 | qBittorrent | `https://qbit.example.com` | 192.168.1.87 |
 | Authentik | `https://auth.example.com` | 192.168.1.87 |
-| Plex | `https://plex.example.com` | 192.168.1.87 |
+| Plex (web UI) | `https://plex.example.com` | 192.168.1.87 |
+| Plex (native clients) | `http://192.168.1.70:32400` | 192.168.1.70 |
 
 ## Credential Storage
 

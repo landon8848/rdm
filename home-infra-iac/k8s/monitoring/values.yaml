@@ -1,0 +1,46 @@
+# kube-prometheus-stack — lightweight homelab config
+# Helm chart: prometheus-community/kube-prometheus-stack
+
+grafana:
+  adminPassword: ""  # Set via Vault secret below
+  admin:
+    existingSecret: grafana-admin-secret
+    userKey: username
+    passwordKey: password
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: local-path
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki.loki.svc.cluster.local:3100
+      isDefault: false
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+alertmanager:
+  enabled: false  # Keep it simple for now
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true

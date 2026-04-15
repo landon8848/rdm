@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-auth
+  namespace: monitoring
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: monitoring
+spec:
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: grafana
+    serviceAccount: vault-auth
+---
+# Syncs secret/grafana/admin from Vault → grafana-admin-secret Kubernetes Secret
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: grafana-admin-secret
+  namespace: monitoring
+spec:
+  type: kv-v2
+  mount: secret
+  path: grafana/admin
+  destination:
+    name: grafana-admin-secret
+    create: true
+  vaultAuthRef: vault-auth
+  refreshAfter: 1h

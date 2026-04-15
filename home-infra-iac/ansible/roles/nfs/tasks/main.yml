@@ -1,0 +1,49 @@
+---
+- name: Install NFS server packages
+  apt:
+    name:
+      - nfs-kernel-server
+      - nfs-common
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Create media directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0755"
+  loop:
+    - /mnt/my-nfs/dropbox
+    - /mnt/my-nfs/downloads/complete
+    - /mnt/my-nfs/downloads/incomplete
+    - /mnt/my-nfs/downloads/watch
+    - /mnt/my-nfs/media/movies
+    - /mnt/my-nfs/media/tv
+    - /mnt/my-nfs/media/music
+
+- name: Configure NFS exports
+  copy:
+    dest: /etc/exports
+    content: |
+      # downloads/ + media/ — shared to k0s worker nodes for qbittorrent & plex.
+      # no_root_squash is required so k8s pods running as root can chown into
+      # the share on first mount.
+      /mnt/my-nfs/downloads  192.168.1.0/16(rw,sync,no_subtree_check,no_root_squash)
+      /mnt/my-nfs/media      192.168.1.0/16(rw,sync,no_subtree_check,no_root_squash)
+
+      # dropbox/ — restricted drop target. Only the Proxmox host can mount it
+      # for now; broaden the client list here (and re-run the playbook or
+      # `exportfs -ra`) when another host needs access. root_squash keeps a
+      # compromised prox root from owning files on the share.
+      /mnt/my-nfs/dropbox    192.168.1.148(rw,sync,no_subtree_check,root_squash)
+    mode: "0644"
+  notify: reload nfs exports
+
+- name: Enable and start NFS server
+  systemd:
+    name: nfs-kernel-server
+    enabled: yes
+    state: started

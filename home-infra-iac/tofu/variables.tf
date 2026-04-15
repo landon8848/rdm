@@ -57,8 +57,3 @@ variable "ssh_public_key" {
   sensitive   = true
 }
 
-variable "lxc_template_id" {
-  description = "Proxmox CT template file ID for LXC containers (e.g. local:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst)"
-  type        = string
-  default     = "local:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
-}

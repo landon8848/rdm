@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-auth
+  namespace: qbittorrent
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: qbittorrent
+spec:
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: qbittorrent
+    serviceAccount: vault-auth
+---
+# Syncs secret/qbittorrent/vpn from Vault → qbittorrent-vpn-secret Kubernetes Secret
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: qbittorrent-vpn-secret
+  namespace: qbittorrent
+spec:
+  type: kv-v2
+  mount: secret
+  path: qbittorrent/vpn
+  destination:
+    name: qbittorrent-vpn-secret
+    create: true
+  vaultAuthRef: vault-auth
+  refreshAfter: 1h

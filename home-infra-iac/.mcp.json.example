@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "kubectl": {
+      "command": "kubectl-mcp-server",
+      "args": ["--config", "${HOME}/.kube/config"],
+      "env": {
+        "KUBECONFIG": "${HOME}/.kube/config"
+      }
+    }
+  }
+}

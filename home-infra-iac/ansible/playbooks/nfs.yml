@@ -1,0 +1,117 @@
+---
+# nfs-01 is a privileged LXC with a bind mount and the mount=nfs feature
+# flag. Proxmox rejects API token auth for both of those operations (even
+# from root@pam tokens), so we provision the container directly on the
+# Proxmox host via `pct` instead of through tofu. Everything else — VMs,
+# unprivileged LXCs — stays in tofu.
+- name: Create nfs-01 LXC on Proxmox host
+  hosts: prox
+  gather_facts: false
+  vars:
+    nfs_lxc_vmid: 207
+    nfs_lxc_hostname: nfs-01
+    nfs_lxc_ip: 192.168.1.125
+    nfs_lxc_cidr_prefix: 16
+    nfs_lxc_gateway: 192.168.1.1
+    nfs_lxc_bridge: vmbr0
+    nfs_lxc_storage: local-lvm
+    nfs_lxc_template: "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+    nfs_lxc_nameserver: 192.168.1.6
+    nfs_lxc_searchdomain: "{{ domain }}"
+    nfs_lxc_ssh_pubkey_path: "~/.ssh/id_ed25519.pub"
+    nfs_lxc_bind_host_path: /mnt/my-nfs
+    nfs_lxc_bind_ct_path: /mnt/my-nfs
+  tasks:
+    - name: Check whether nfs-01 LXC already exists
+      command: pct config {{ nfs_lxc_vmid }}
+      register: pct_config
+      failed_when: false
+      changed_when: false
+
+    - name: Stage SSH public key on prox for pct create
+      copy:
+        src: "{{ nfs_lxc_ssh_pubkey_path }}"
+        dest: /tmp/nfs-01-pubkey
+        mode: "0600"
+      when: pct_config.rc != 0
+
+    - name: Create nfs-01 LXC via pct
+      # Privileged (unprivileged=0) because NFS server needs real mount
+      # capabilities. Features + bind mount are the reason this lives in
+      # ansible rather than tofu — the Proxmox API rejects both from tokens.
+      command: >-
+        pct create {{ nfs_lxc_vmid }} {{ nfs_lxc_template }}
+        --hostname {{ nfs_lxc_hostname }}
+        --cores 1
+        --memory 512
+        --rootfs {{ nfs_lxc_storage }}:4
+        --net0 name=eth0,bridge={{ nfs_lxc_bridge }},ip={{ nfs_lxc_ip }}/{{ nfs_lxc_cidr_prefix }},gw={{ nfs_lxc_gateway }}
+        --nameserver {{ nfs_lxc_nameserver }}
+        --searchdomain {{ nfs_lxc_searchdomain }}
+        --unprivileged 0
+        --features nesting=1,mount=nfs
+        --mp0 {{ nfs_lxc_bind_host_path }},mp={{ nfs_lxc_bind_ct_path }},shared=1
+        --ssh-public-keys /tmp/nfs-01-pubkey
+        --onboot 1
+        --tags infra;storage
+        --description "NFS server - media storage (USB-backed)"
+      when: pct_config.rc != 0
+
+    - name: Start nfs-01 LXC
+      command: pct start {{ nfs_lxc_vmid }}
+      when: pct_config.rc != 0
+
+    - name: Wait for nfs-01 network before apt operations
+      wait_for:
+        host: "{{ nfs_lxc_ip }}"
+        port: 22
+        delay: 3
+        timeout: 120
+      when: pct_config.rc != 0
+
+    # Debian minimal LXC templates don't include sudo. The common role runs
+    # with `become: yes` as myadmin, so sudo needs to exist before the
+    # second play hands off.
+    - name: Install sudo in nfs-01
+      command: pct exec {{ nfs_lxc_vmid }} -- bash -lc "apt-get update && apt-get install -y sudo"
+      when: pct_config.rc != 0
+
+    # pct create --ssh-public-keys only installs the key for root. The rest of
+    # the homelab connects as `myadmin` (VMs get it via cloud-init; LXCs via
+    # pct don't), so we bootstrap that user here via pct exec before handing
+    # off to the second play.
+    - name: Create myadmin user inside nfs-01
+      command: pct exec {{ nfs_lxc_vmid }} -- useradd -m -s /bin/bash -U myadmin
+      when: pct_config.rc != 0
+
+    - name: Create myadmin .ssh directory inside nfs-01
+      command: pct exec {{ nfs_lxc_vmid }} -- install -d -m 0700 -o myadmin -g myadmin /home/myadmin/.ssh
+      when: pct_config.rc != 0
+
+    - name: Push SSH public key into myadmin authorized_keys
+      command: pct push {{ nfs_lxc_vmid }} /tmp/nfs-01-pubkey /home/myadmin/.ssh/authorized_keys --user myadmin --group myadmin --perms 0600
+      when: pct_config.rc != 0
+
+    # Passwordless sudo is normally installed by the common role, but the
+    # common role can't run without already having passwordless sudo. Write
+    # the sudoers entry here during bootstrap; common role will re-assert it
+    # idempotently on the next run.
+    - name: Grant myadmin passwordless sudo (bootstrap)
+      command: >-
+        pct exec {{ nfs_lxc_vmid }} -- bash -c
+        "echo 'myadmin ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/myadmin
+        && chmod 0440 /etc/sudoers.d/myadmin
+        && visudo -cf /etc/sudoers.d/myadmin"
+      when: pct_config.rc != 0
+
+    - name: Remove staged SSH public key
+      file:
+        path: /tmp/nfs-01-pubkey
+        state: absent
+      when: pct_config.rc != 0
+
+- name: Configure NFS server for media storage
+  hosts: nfs
+  roles:
+    - common
+    - nfs

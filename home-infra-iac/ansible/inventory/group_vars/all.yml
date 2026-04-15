@@ -31,6 +31,7 @@ upstream_dns:
   - 208.67.220.220   # OpenDNS secondary (DNSSEC)
 
 base_packages:
+  - sudo
   - curl
   - wget
   - git
@@ -44,3 +45,4 @@ base_packages:
   - gnupg
   - qemu-guest-agent
   - python3-pip
+  - nfs-common

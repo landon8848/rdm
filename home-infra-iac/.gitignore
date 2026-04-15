@@ -24,5 +24,16 @@
 # Vault
 ansible/vault/vault-init.json
 
-# git
-../public_staging/
+# MCP server config — may contain API tokens (see .mcp.json.example)
+.mcp.json
+
+# Personal, untracked notes and TODO files — anything matching *.local.md
+# stays out of git by convention. Use this for drafts, private reminders,
+# and enhancement backlogs that shouldn't ship with the repo.
+*.local.md
+
+# Historical command logs — local working notes from setup, not meant for
+# distribution. The sanitize script would clean them, but there's no reason
+# to publish them in the first place.
+commands-log.md
+commands-log.txt

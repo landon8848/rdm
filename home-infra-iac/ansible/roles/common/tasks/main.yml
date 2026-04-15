@@ -42,7 +42,7 @@
   lineinfile:
     path: /etc/hosts
     regexp: '^[0-9.]+\s+{{ inventory_hostname }}\.{{ domain }}\s'
-    line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}.{{ domain }} {{ inventory_hostname }}"
+    line: "{{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}.{{ domain }} {{ inventory_hostname }}"
 
 - name: Set timezone
   timezone:

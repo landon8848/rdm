@@ -1,0 +1,58 @@
+# NFS-backed persistent volume for Plex media.
+# Points at the media-only subtree of the nfs-01 LXC (192.168.1.125).
+# qBittorrent mounts the downloads subtree separately — the two are
+# deliberately split so neither service sees the other's data.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: plex-media-nfs
+  labels:
+    app: plex
+    type: nfs-storage
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.125
+    path: /mnt/my-nfs/media
+  mountOptions:
+    - nfsvers=4
+    - hard
+    - intr
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-media-nfs
+  namespace: plex
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 100Gi
+  selector:
+    matchLabels:
+      app: plex
+      type: nfs-storage
+---
+# Separate PVC for Plex config/metadata/database (local-path)
+# This holds the Plex database, thumbnails, and metadata cache.
+# Keeping it on local-path gives better I/O for the database.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-config
+  namespace: plex
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi

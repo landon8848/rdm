@@ -117,40 +117,6 @@ module "k0sw_00" {
   ssh_public_key    = local.common.ssh_public_key
 }
 
-module "nfs_01" {
-  source = "./modules/proxmox_lxc"
-
-  name             = "nfs-01"
-  vm_id            = 207
-  description      = "NFS server — media storage (USB-backed)"
-  tags             = ["infra", "storage"]
-  ip_address       = "192.168.1.125"
-  cores            = 1
-  memory_mb        = 512
-  disk_size_gb     = 4
-  template_file_id = var.lxc_template_id
-
-  # Bind-mount the USB drive from the Proxmox host into the container.
-  # Prerequisites:
-  #   1. USB drive formatted and mounted at /mnt/media-usb on the Proxmox host
-  #   2. Entry in /etc/fstab on the host for persistence
-  mount_points = [
-    {
-      host_path      = "/mnt/media-usb"
-      container_path = "/mnt/media-usb"
-    }
-  ]
-
-  dns_servers       = local.common.dns_servers
-  dns_search_domain = "example.com"
-  node_name         = local.common.node_name
-  datastore         = local.common.datastore
-  bridge            = local.common.bridge
-  gateway           = local.common.gateway
-  cidr_prefix       = local.common.cidr_prefix
-  ssh_public_key    = local.common.ssh_public_key
-}
-
 module "k0sw_01" {
   source = "./modules/proxmox_vm"
 

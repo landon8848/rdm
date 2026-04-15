@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-auth
+  namespace: plex
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: plex
+spec:
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: plex
+    serviceAccount: vault-auth
+---
+# Syncs secret/plex/claim from Vault → plex-claim-secret Kubernetes Secret
+# The PLEX_CLAIM token is a one-time claim token from https://plex.tv/claim
+# used to link the server to your Plex account on first boot.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: plex-claim-secret
+  namespace: plex
+spec:
+  type: kv-v2
+  mount: secret
+  path: plex/claim
+  destination:
+    name: plex-claim-secret
+    create: true
+  vaultAuthRef: vault-auth
+  refreshAfter: 1h

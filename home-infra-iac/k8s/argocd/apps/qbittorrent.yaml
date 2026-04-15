@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: qbittorrent-config
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@git.example.com:my/my-local.git
+    targetRevision: main
+    path: k8s/qbittorrent
+    directory:
+      exclude: "SETUP.md"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: qbittorrent
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
