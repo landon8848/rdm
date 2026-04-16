@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homepage-config
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@git.example.com:my/my-local.git
+    targetRevision: main
+    path: k8s/homepage
+    directory:
+      exclude: "{values.yaml,SETUP.md}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homepage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,136 @@
+# Homepage Dashboard — Helm values
+# Chart: jameswynn/homepage
+# Docs: https://gethomepage.dev
+#
+# Helm install:
+#   helm repo add jameswynn https://jameswynn.github.io/helm-charts
+#   helm install homepage jameswynn/homepage \
+#     --namespace homepage --create-namespace \
+#     --values k8s/homepage/values.yaml --wait
+
+image:
+  repository: ghcr.io/gethomepage/homepage
+  tag: latest
+
+env:
+  HOMEPAGE_ALLOWED_HOSTS: nexus.example.com
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+# Disable built-in ingress — we manage our own Traefik IngressRoute
+ingress:
+  main:
+    enabled: false
+
+# Mount config from ConfigMap
+config:
+  # Settings
+  settings:
+    title: nexus
+    favicon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/homepage.png
+    theme: dark
+    color: slate
+    headerStyle: clean
+    layout:
+      Infrastructure:
+        style: row
+        columns: 4
+      Media:
+        style: row
+        columns: 2
+      Identity:
+        style: row
+        columns: 1
+      Monitoring:
+        style: row
+        columns: 2
+
+  # Service widgets
+  services:
+    - Infrastructure:
+        - ArgoCD:
+            icon: argocd
+            href: https://argo.example.com
+            description: GitOps continuous delivery
+            siteMonitor: https://argo.example.com
+        - Forgejo:
+            icon: forgejo
+            href: https://git.example.com
+            description: Git server
+            siteMonitor: https://git.example.com
+        - Traefik:
+            icon: traefik
+            href: https://traefik.example.com
+            description: Reverse proxy & ingress
+            siteMonitor: https://traefik.example.com
+        - Proxmox:
+            icon: proxmox
+            href: https://192.168.1.148:8006
+            description: Hypervisor
+            siteMonitor: https://192.168.1.148:8006
+    - Media:
+        - Plex:
+            icon: plex
+            href: https://plex.example.com
+            description: Media streaming
+            siteMonitor: https://plex.example.com
+        - qBittorrent:
+            icon: qbittorrent
+            href: https://qbit.example.com
+            description: Torrent client
+            siteMonitor: https://qbit.example.com
+    - Identity:
+        - Authentik:
+            icon: authentik
+            href: https://auth.example.com
+            description: Single sign-on
+            siteMonitor: https://auth.example.com
+    - Monitoring:
+        - Grafana:
+            icon: grafana
+            href: https://grafana.example.com
+            description: Dashboards & observability
+            siteMonitor: https://grafana.example.com
+        - Pi-hole:
+            icon: pi-hole
+            href: http://pihole-01.example.com/admin
+            description: DNS & ad blocking
+            siteMonitor: http://pihole-01.example.com/admin
+
+  # Top bar widgets
+  widgets:
+    - search:
+        provider: google
+        target: _blank
+    - greeting:
+        text_size: xl
+        text: nexus
+    - datetime:
+        text_size: xl
+        format:
+          dateStyle: long
+          timeStyle: short
+          hour12: true
+    - openmeteo:
+        label: Home
+        units: imperial
+        cache: 5
+
+  # Bookmarks (optional — add personal links here)
+  bookmarks: []
+
+  # Kubernetes integration — Homepage can auto-discover services via k8s API
+  kubernetes:
+    mode: cluster
+
+# ServiceAccount for k8s widget integration
+serviceAccount:
+  create: true
+  name: homepage
+
+enableRbac: true

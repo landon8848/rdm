@@ -44,6 +44,10 @@ graph TB
                         Forgejo["Forgejo\ngit.example.com\nOrg: my"]
                     end
 
+                    subgraph dashboard["Dashboard"]
+                        Homepage["Homepage\nnexus.example.com\nService launcher & status"]
+                    end
+
                     subgraph media["Media"]
                         qBittorrent["qBittorrent + Gluetun\nqbit.example.com\nvpn-provider WireGuard VPN\nNFS media from nfs-01"]
                         Plex["Plex Media Server\nplex.example.com\nDirect play (no transcoding)\nNFS media from nfs-01"]
@@ -93,6 +97,7 @@ graph TB
     Traefik -->|"HTTPS route"| qBittorrent
     Traefik -->|"HTTPS route\n(web UI)"| Plex
     Traefik -->|"HTTPS route"| Authentik
+    Traefik -->|"HTTPS route"| Homepage
     MetalLB -->|"LoadBalancer IP\n192.168.1.87"| Traefik
     MetalLB -->|"LoadBalancer IP\n192.168.1.70"| PlexLAN
     PlexLAN -->|"direct pod traffic\n(client IP preserved)"| Plex
@@ -116,6 +121,7 @@ graph TB
 | Forgejo | `https://git.example.com` | 192.168.1.87 |
 | qBittorrent | `https://qbit.example.com` | 192.168.1.87 |
 | Authentik | `https://auth.example.com` | 192.168.1.87 |
+| Homepage | `https://nexus.example.com` | 192.168.1.87 |
 | Plex (web UI) | `https://plex.example.com` | 192.168.1.87 |
 | Plex (native clients) | `http://192.168.1.70:32400` | 192.168.1.70 |
 
