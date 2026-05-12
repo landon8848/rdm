@@ -1,0 +1,76 @@
+# FlareSolverr — dns-provider challenge solver for Prowlarr.
+# Stateless headless-browser proxy. Prowlarr calls POST /v1 with a URL
+# that's behind a challenge page, FlareSolverr opens it in Chrome,
+# waits for the challenge to clear, and returns session cookies.
+# No persistent storage needed — every request is independent.
+# No ingress — only Prowlarr needs to reach it, cluster DNS is enough.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flaresolverr
+  namespace: arr
+  labels:
+    app: flaresolverr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: flaresolverr
+  template:
+    metadata:
+      labels:
+        app: flaresolverr
+    spec:
+      containers:
+        - name: flaresolverr
+          image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
+          env:
+            - name: LOG_LEVEL
+              value: info
+            - name: TZ
+              value: America/Chicago
+            # Browser instances are restarted after this many requests to
+            # keep memory from creeping. Default 600.
+            - name: BROWSER_TIMEOUT
+              value: "40000"
+          ports:
+            - name: http
+              containerPort: 8191
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8191
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8191
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flaresolverr
+  namespace: arr
+  labels:
+    app: flaresolverr
+spec:
+  selector:
+    app: flaresolverr
+  ports:
+    - name: http
+      port: 8191
+      targetPort: http
+      protocol: TCP
+  type: ClusterIP

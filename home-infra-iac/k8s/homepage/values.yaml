@@ -43,9 +43,15 @@ config:
       Media:
         style: row
         columns: 2
-      Identity:
+      "*arr":
+        style: row
+        columns: 3
+      Automation:
         style: row
         columns: 1
+      Identity & Security:
+        style: row
+        columns: 2
       Monitoring:
         style: row
         columns: 2
@@ -54,7 +60,7 @@ config:
   services:
     - Infrastructure:
         - ArgoCD:
-            icon: argocd
+            icon: argo-cd
             href: https://argo.example.com
             description: GitOps continuous delivery
             siteMonitor: https://argo.example.com
@@ -70,9 +76,9 @@ config:
             siteMonitor: https://traefik.example.com
         - Proxmox:
             icon: proxmox
-            href: https://192.168.1.148:8006
+            href: https://prox.example.com:8006
             description: Hypervisor
-            siteMonitor: https://192.168.1.148:8006
+            siteMonitor: https://prox.example.com:8006
     - Media:
         - Plex:
             icon: plex
@@ -84,23 +90,50 @@ config:
             href: https://qbit.example.com
             description: Torrent client
             siteMonitor: https://qbit.example.com
-    - Identity:
+    - "*arr":
+        - Prowlarr:
+            icon: prowlarr
+            href: https://prowlarr.example.com
+            description: Indexer manager
+            siteMonitor: http://prowlarr.arr.svc.cluster.local:9696/ping
+        - Sonarr:
+            icon: sonarr
+            href: https://sonarr.example.com
+            description: TV automation
+            siteMonitor: http://sonarr.arr.svc.cluster.local:8989/ping
+        - Radarr:
+            icon: radarr
+            href: https://radarr.example.com
+            description: Movie automation
+            siteMonitor: http://radarr.arr.svc.cluster.local:7878/ping
+    - Automation:
+        - Home Assistant:
+            icon: home-assistant
+            href: https://hass.example.com
+            description: Home automation
+            siteMonitor: https://hass.example.com/manifest.json
+    - Identity & Security:
         - Authentik:
             icon: authentik
             href: https://auth.example.com
             description: Single sign-on
             siteMonitor: https://auth.example.com
+        - Vault:
+            icon: vault
+            href: https://vault.example.com:8200
+            description: Secrets management
+            siteMonitor: https://vault.example.com:8200/v1/sys/health
     - Monitoring:
         - Grafana:
             icon: grafana
             href: https://grafana.example.com
             description: Dashboards & observability
-            siteMonitor: https://grafana.example.com
+            siteMonitor: http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local:80/api/health
         - Pi-hole:
             icon: pi-hole
-            href: http://pihole-01.example.com/admin
+            href: https://pihole-01.example.com/admin
             description: DNS & ad blocking
-            siteMonitor: http://pihole-01.example.com/admin
+            siteMonitor: https://pihole-01.example.com/admin/
 
   # Top bar widgets
   widgets:

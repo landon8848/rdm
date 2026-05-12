@@ -1,0 +1,97 @@
+# Radarr — movie library automation. Same pattern as Sonarr.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: arr
+  labels:
+    app: radarr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: radarr
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      initContainers:
+        - name: wait-for-nfs
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              echo "Checking NFS data volume..."
+              if [ ! -d /data/downloads ] || [ ! -d /data/media ]; then
+                echo "ERROR: /data/downloads or /data/media not found — NFS volume may not be mounted."
+                exit 1
+              fi
+              echo "NFS data volume is available."
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: radarr
+          image: lscr.io/linuxserver/radarr:6.1.1
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: America/Chicago
+          ports:
+            - name: http
+              containerPort: 7878
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 7878
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 7878
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: radarr-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: arr-nfs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr
+  namespace: arr
+  labels:
+    app: radarr
+spec:
+  selector:
+    app: radarr
+  ports:
+    - name: http
+      port: 7878
+      targetPort: http
+      protocol: TCP
+  type: ClusterIP

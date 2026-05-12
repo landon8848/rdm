@@ -57,3 +57,29 @@ variable "ssh_public_key" {
   sensitive   = true
 }
 
+# ── Authentik ────────────────────────────────────────────────────────
+variable "authentik_url" {
+  description = "Authentik base URL"
+  type        = string
+  default     = "https://auth.example.com"
+}
+
+variable "authentik_token" {
+  description = "Authentik API token (create in Admin → Tokens & App passwords)"
+  type        = string
+  sensitive   = true
+}
+
+# ── Vault ────────────────────────────────────────────────────────────
+variable "vault_address" {
+  description = "Vault server URL"
+  type        = string
+  default     = "https://192.168.1.140:8200"
+}
+
+variable "vault_token" {
+  description = "Vault token with permissions to manage secrets and policies"
+  type        = string
+  sensitive   = true
+}
+

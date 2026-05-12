@@ -98,6 +98,7 @@ graph TB
     Traefik -->|"HTTPS route\n(web UI)"| Plex
     Traefik -->|"HTTPS route"| Authentik
     Traefik -->|"HTTPS route"| Homepage
+    Traefik -->|"HTTPS route\n(VM passthrough)"| HASS["Home Assistant VM\nhass · 192.168.1.89:8123"]
     MetalLB -->|"LoadBalancer IP\n192.168.1.87"| Traefik
     MetalLB -->|"LoadBalancer IP\n192.168.1.70"| PlexLAN
     PlexLAN -->|"direct pod traffic\n(client IP preserved)"| Plex
@@ -124,6 +125,7 @@ graph TB
 | Homepage | `https://nexus.example.com` | 192.168.1.87 |
 | Plex (web UI) | `https://plex.example.com` | 192.168.1.87 |
 | Plex (native clients) | `http://192.168.1.70:32400` | 192.168.1.70 |
+| Home Assistant | `https://hass.example.com` | 192.168.1.89 (VM, fronted by Traefik) |
 
 ## Credential Storage
 

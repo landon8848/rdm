@@ -15,7 +15,6 @@ dns_direct_hosts:
   - { name: k0sw-01,    ip: 192.168.1.135 }
   - { name: prox,       ip: 192.168.1.148 }
   - { name: nfs-01,     ip: 192.168.1.125 }
-  - { name: hass,       ip: 192.168.1.89  }
 
 # CNAME aliases within {{ domain }}. Target must be a name dnsmasq already
 # knows (i.e. defined in dns_direct_hosts or another cname entry).

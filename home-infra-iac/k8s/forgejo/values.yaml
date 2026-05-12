@@ -23,10 +23,21 @@ gitea:
       TYPE: level
     session:
       PROVIDER: memory
+    oauth2:
+      ENABLED: true
     service:
-      DISABLE_REGISTRATION: true
+      DISABLE_REGISTRATION: false
+      ALLOW_ONLY_EXTERNAL_REGISTRATION: true
     webhook:
       ALLOWED_HOST_LIST: "private,loopback,192.168.1.0/24"
+
+  oauth:
+    - name: Authentik
+      provider: openidConnect
+      existingSecret: forgejo-oidc-secret
+      autoDiscoverUrl: https://auth.example.com/application/o/forgejo/.well-known/openid-configuration
+      groupClaimName: groups
+      adminGroup: "authentik Admins"
 
 # Disable heavyweight dependencies — SQLite + memory is fine for a homelab
 postgresql-ha:

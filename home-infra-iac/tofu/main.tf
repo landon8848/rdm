@@ -4,6 +4,17 @@ provider "proxmox" {
   insecure  = var.proxmox_insecure
 }
 
+provider "authentik" {
+  url   = var.authentik_url
+  token = var.authentik_token
+}
+
+provider "vault" {
+  address         = var.vault_address
+  token           = var.vault_token
+  skip_tls_verify = true # Self-signed cert
+}
+
 locals {
   common = {
     node_name      = var.proxmox_node
@@ -126,7 +137,7 @@ module "k0sw_01" {
   tags         = ["k8s", "worker"]
   ip_address   = "192.168.1.135"
   cores        = 4
-  memory_mb    = 6144
+  memory_mb    = 8192
   disk_size_gb = 64
 
   dns_servers       = local.common.dns_servers

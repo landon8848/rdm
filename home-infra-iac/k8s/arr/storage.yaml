@@ -1,0 +1,86 @@
+# NFS-backed persistent volume for the arr stack (Sonarr, Radarr, Prowlarr).
+# Unlike qBittorrent and Plex — which mount /downloads and /media separately —
+# the arr apps need to see BOTH subtrees under a single mount so that
+# hardlinking between them stays on the same filesystem (different mounts in
+# the pod view would not hardlink even if the NFS server filesystem is shared).
+# We mount the NFS export root at /data and let Sonarr/Radarr walk down into
+# /data/downloads and /data/media.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arr-nfs
+  labels:
+    app: arr
+    type: nfs-storage
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.125
+    path: /mnt/my-nfs
+  mountOptions:
+    - nfsvers=4
+    - hard
+    - intr
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: arr-nfs
+  namespace: arr
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 100Gi
+  selector:
+    matchLabels:
+      app: arr
+      type: nfs-storage
+---
+# Per-app config PVCs — local-path so the config DBs get fast I/O
+# and survive NFS outages.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prowlarr-config
+  namespace: arr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarr-config
+  namespace: arr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-config
+  namespace: arr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi

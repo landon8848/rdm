@@ -7,6 +7,30 @@ grafana:
     existingSecret: grafana-admin-secret
     userKey: username
     passwordKey: password
+  grafana.ini:
+    server:
+      root_url: https://grafana.example.com
+    auth:
+      signout_redirect_url: https://auth.example.com/application/o/grafana/end-session/
+      oauth_auto_login: true
+    auth.generic_oauth:
+      enabled: true
+      name: Authentik
+      client_id: $__file{/etc/secrets/authentik/client_id}
+      client_secret: $__file{/etc/secrets/authentik/client_secret}
+      scopes: openid profile email
+      auth_url: https://auth.example.com/application/o/authorize/
+      token_url: https://auth.example.com/application/o/token/
+      api_url: https://auth.example.com/application/o/userinfo/
+      role_attribute_path: "contains(groups[*], 'authentik Admins') && 'Admin' || 'Viewer'"
+  initChownData:
+    enabled: false
+  extraSecretMounts:
+    - name: authentik-oauth
+      secretName: grafana-oidc-secret
+      defaultMode: 0440
+      mountPath: /etc/secrets/authentik
+      readOnly: true
   persistence:
     enabled: true
     size: 5Gi
