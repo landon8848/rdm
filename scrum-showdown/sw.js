@@ -5,7 +5,7 @@
  * fresh files and activate delete every old cache, so testers never get
  * stuck on a stale shell. skipWaiting + clients.claim make the new worker
  * take over on the very next load. See docs/PILOT.md. */
-const CACHE_VERSION = '0.2.0+3';
+const CACHE_VERSION = '0.2.0+4';
 const CACHE = `scrum-showdown-shell-v${CACHE_VERSION}`;
 
 const SHELL = [

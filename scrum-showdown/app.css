@@ -434,9 +434,12 @@ input:focus-visible {
   font-family: var(--display);
   display: grid;
   place-items: center;
-  padding: 0.4rem;
+  padding: 0.2rem;
   perspective: 600px;
   background: none;
+  /* Size the faces' type to the card itself (cq units), so the glyph
+     stays large whether this is a table card or a lane card. */
+  container-type: size;
 }
 .card__inner {
   position: relative;
@@ -457,14 +460,16 @@ input:focus-visible {
   backface-visibility: hidden;
   text-align: center;
   word-break: break-word;
-  padding: 0.3rem;
+  padding: 0.12rem;
 }
 .card__back {
   /* Muted blue pastel. For an orange-pastel variant instead, swap to:
      linear-gradient(150deg, #f3c79b, #e0a878) */
   background: linear-gradient(150deg, #9fb3cf, #7e93b4);
   color: var(--ink);
-  font-size: clamp(1.8rem, 7vw, 2.6rem);
+  /* Glyph fills the card (≈68% of its shorter side). */
+  font-size: 68cqmin;
+  line-height: 1;
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
 }
 .card__front {
@@ -473,7 +478,7 @@ input:focus-visible {
   color: var(--cream);
   transform: rotateY(180deg);
   font-weight: 700;
-  font-size: clamp(0.8rem, 3.4vw, 1.05rem);
+  font-size: clamp(0.7rem, 19cqmin, 1.15rem);
 }
 .card:disabled {
   cursor: default;
@@ -486,7 +491,7 @@ input:focus-visible {
 
 .lanes {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.6rem;
   width: 100%;
   margin-top: 0.5rem;
@@ -498,7 +503,7 @@ input:focus-visible {
   padding: 0.6rem;
   /* Fixed height so lanes never resize as they fill — cards scroll
      inside instead of pushing the page around. */
-  height: 168px;
+  height: 232px;
   display: flex;
   flex-direction: column;
 }
@@ -513,39 +518,19 @@ input:focus-visible {
   text-align: center;
   flex: 0 0 auto;
 }
+/* Lane cards are the SAME flip cards as the table (3:4, big glyph),
+   just face-up showing the name; click flips to the glyph. They wrap
+   and scroll within the fixed-height lane. */
 .lane__cards {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
   gap: 0.4rem;
   flex: 1 1 auto;
   overflow-y: auto;
   align-content: start;
 }
-/* Two cards per row; each fills its cell so names stay on one line. */
-.lane .card,
 .lane .snooze-card {
   width: 100%;
-}
-.lane .card {
-  aspect-ratio: auto;
-  height: 44px;
-  border-radius: 9px;
-  padding: 0;
-}
-.lane .card__face {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.55rem;
-  word-break: normal;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.lane .card__back {
-  font-size: 1.15rem;
-}
-.lane .card__front {
-  font-size: 0.9rem;
 }
 
 /* Anticlimactic completion spark — a single tiny poof, then nothing. */
