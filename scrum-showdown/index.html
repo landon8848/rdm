@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a1026" />
+    <title>Scrum Showdown</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+
+    <main class="stage">
+      <header class="marquee">
+        <h1 class="marquee__title">
+          <span>Scrum</span><span class="marquee__title-accent">Showdown</span>
+        </h1>
+        <p class="marquee__tag">Flip a card to see who's up next.</p>
+      </header>
+
+      <section class="arena" aria-label="Mystery card board">
+        <p id="current-name" class="readout" aria-live="polite"></p>
+        <p id="sr-status" class="sr-only" aria-live="polite"></p>
+
+        <div id="speaker-controls" class="controls" hidden>
+          <button id="done" class="btn btn--primary" type="button">Done · Next</button>
+          <button id="snooze" class="btn btn--ghost" type="button">Snooze</button>
+          <button id="absent" class="btn btn--ghost" type="button">Absent today</button>
+        </div>
+
+        <div id="grid" class="grid" role="group" aria-label="Face-down mystery cards"></div>
+
+        <div id="round-banner" class="banner" role="status" hidden>
+          🎉 Everyone's gone
+        </div>
+
+        <div class="lanes">
+          <section class="lane" aria-label="Done"><h2 class="lane__title">Done</h2><div id="lane-done" class="lane__cards"></div></section>
+          <section class="lane" aria-label="Snooze"><h2 class="lane__title">Snooze</h2><div id="lane-snooze" class="lane__cards"></div></section>
+          <section class="lane" aria-label="Absent"><h2 class="lane__title">Absent</h2><div id="lane-absent" class="lane__cards"></div></section>
+        </div>
+
+        <div class="reset-area">
+          <button id="roster-btn" class="reset-btn" type="button">Roster</button>
+          <button id="reset" class="reset-btn" type="button">New round</button>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <a
+          class="footer__feedback"
+          href="https://forms.gle/REPLACE_WITH_PILOT_FEEDBACK_FORM"
+          target="_blank"
+          rel="noopener"
+          >Pilot feedback ↗</a
+        >
+        <span id="version" class="footer__version"></span>
+      </footer>
+    </main>
+
+    <dialog id="roster-dialog" class="modal" aria-labelledby="roster-dialog-title">
+      <div class="modal__card">
+        <h2 id="roster-dialog-title" class="modal__title">Roster</h2>
+        <ul id="roster-list" class="roster__list"></ul>
+        <div class="roster__add">
+          <input id="roster-name" class="roster__input" type="text"
+            placeholder="Add a teammate…" autocomplete="off" aria-label="New teammate name" />
+          <button id="roster-add" class="btn btn--primary" type="button">Add</button>
+        </div>
+        <div class="modal__actions">
+          <button id="roster-close" class="btn btn--ghost" type="button">Close</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="reset-dialog" class="modal" aria-labelledby="reset-dialog-title">
+      <div class="modal__card">
+        <h2 id="reset-dialog-title" class="modal__title">Reset round?</h2>
+        <p class="modal__body">
+          This clears everyone's Done and Snooze and starts a fresh round.
+          The roster stays as it is.
+        </p>
+        <div class="modal__actions">
+          <button id="reset-no" class="btn btn--ghost" type="button">Cancel</button>
+          <button id="reset-yes" class="btn btn--danger" type="button">Confirm reset</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

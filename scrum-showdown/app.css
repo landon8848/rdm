@@ -1,0 +1,546 @@
+/* Scrum Showdown — "game-show stage" aesthetic.
+   Offline-safe: no remote fonts, no CDN. Original palette/type/layout
+   (legally-clean homage to the generic prize-wheel mechanic). */
+
+:root {
+  --ink: #1a1026;
+  --ink-2: #271640;
+  --cream: #fff3df;
+  --amber: #ffb02e;
+  --coral: #ff5d5d;
+  --gold: #ffd166;
+  --teal: #2ec4b6;
+  --muted: #b9a8c9;
+
+  --display: "Futura", "Trebuchet MS", "Avenir Next", system-ui, sans-serif;
+  --body: "Avenir Next", "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+
+  --ring: 0 0 0 3px var(--ink), 0 0 0 6px var(--gold);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* The HTML hidden attribute must always win — otherwise a later
+   display:flex/grid rule silently un-hides elements (.controls,
+   #speaker-controls, the old reset confirm all hit this). */
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--body);
+  color: var(--cream);
+  background:
+    radial-gradient(120% 80% at 50% -10%, #3a1f57 0%, var(--ink-2) 38%, var(--ink) 78%);
+  background-attachment: fixed;
+  display: flex;
+  justify-content: center;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  overflow-x: hidden;
+}
+
+/* Subtle film grain so the stage doesn't read as flat. */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  z-index: 999;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.stage {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(1.25rem, 4vw, 2.25rem);
+}
+
+/* ---- Marquee header ---- */
+.marquee {
+  text-align: center;
+  padding: 0.9rem 1.6rem;
+  border: 3px solid var(--gold);
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.25);
+  /* Bulb dots running along the frame. */
+  box-shadow:
+    inset 0 0 0 6px var(--ink-2),
+    0 0 28px rgba(255, 209, 102, 0.25);
+  position: relative;
+}
+.marquee::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 11px;
+  background-image: radial-gradient(var(--gold) 1.6px, transparent 2px);
+  background-size: 17px 17px;
+  background-position: center;
+  opacity: 0.45;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 0;
+  pointer-events: none;
+}
+.marquee__title {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2rem, 9vw, 3.4rem);
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+.marquee__title-accent {
+  color: var(--amber);
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.25);
+}
+.marquee__tag {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---- Arena ---- */
+.arena {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.readout {
+  min-height: 1.2em;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 7vw, 2.8rem);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gold);
+  text-align: center;
+  animation: pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.readout:empty {
+  animation: none;
+}
+@keyframes pop {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+}
+
+.banner {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  background: var(--teal);
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* ---- Buttons ---- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+/* Low-emphasis manual reset, with an inline always-confirm so a
+   shared-screen misclick can't wipe a round in progress. */
+.reset-area {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  align-items: center;
+}
+.reset-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  padding: 0.6rem 0.9rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+.reset-btn:hover {
+  color: var(--cream);
+}
+.reset-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* Reset confirmation modal (native <dialog>). Visibility is owned by the
+   UA via showModal()/close() — no [hidden]+display pitfall. */
+.modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--cream);
+  max-width: min(92vw, 420px);
+}
+.modal::backdrop {
+  background: rgba(10, 5, 18, 0.72);
+  backdrop-filter: blur(2px);
+}
+.modal[open] {
+  animation: modal-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes modal-in {
+  from {
+    transform: translateY(8px) scale(0.96);
+    opacity: 0;
+  }
+}
+.modal__card {
+  background: var(--ink-2);
+  border: 2px solid var(--gold);
+  border-radius: 18px;
+  padding: 1.6rem 1.5rem 1.3rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+.modal__title {
+  font-family: var(--display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1.5rem;
+  color: var(--gold);
+}
+.modal__body {
+  margin: 0.7rem 0 1.3rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--body);
+  font-weight: 700;
+  font-size: 1rem;
+  min-height: 44px;
+  padding: 0.6rem 1.1rem;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 80ms ease, background 120ms ease;
+}
+.btn:active {
+  transform: translateY(2px);
+}
+.btn--primary {
+  background: var(--gold);
+  color: var(--ink);
+}
+.btn--ghost {
+  background: transparent;
+  border-color: var(--muted);
+  color: var(--cream);
+}
+.btn--ghost:hover {
+  border-color: var(--gold);
+}
+.btn--toggle {
+  background: var(--teal);
+  color: var(--ink);
+  min-width: 78px;
+}
+.btn--toggle[aria-pressed="true"] {
+  background: transparent;
+  border-color: var(--coral);
+  color: var(--coral);
+}
+.btn--danger {
+  background: transparent;
+  border-color: var(--coral);
+  color: var(--coral);
+}
+.btn--danger:hover {
+  background: var(--coral);
+  color: var(--ink);
+}
+
+/* Visible keyboard focus everywhere (no hover-only affordances). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* ---- Roster ---- */
+.roster {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.28);
+  border: 2px solid rgba(255, 209, 102, 0.25);
+  border-radius: 16px;
+  padding: 1.1rem 1.2rem 1.3rem;
+}
+.roster__heading {
+  font-family: var(--display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 1rem;
+  color: var(--muted);
+  margin-bottom: 0.8rem;
+}
+.roster__list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.roster-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.roster-row__name {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  background: var(--ink-2);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  color: var(--cream);
+  font: inherit;
+  padding: 0 0.7rem;
+}
+.roster-row__name:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+.roster__add {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.roster__input {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  background: var(--ink-2);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--cream);
+  font: inherit;
+  padding: 0 0.9rem;
+}
+.roster__input::placeholder {
+  color: var(--muted);
+}
+
+/* ---- Footer ---- */
+.footer {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.footer__feedback {
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+.footer__feedback:hover {
+  text-decoration: underline;
+}
+.footer__version {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* ---- Mystery card board ---- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.7rem;
+  width: 100%;
+  margin: 0.4rem 0 0.2rem;
+}
+.card {
+  aspect-ratio: 3 / 4;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: var(--display);
+  display: grid;
+  place-items: center;
+  padding: 0.4rem;
+  perspective: 600px;
+  background: none;
+}
+.card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+.card.is-faceup .card__inner {
+  transform: rotateY(180deg);
+}
+.card__face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  backface-visibility: hidden;
+  text-align: center;
+  word-break: break-word;
+  padding: 0.3rem;
+}
+.card__back {
+  background: linear-gradient(150deg, var(--amber), var(--coral));
+  color: var(--ink);
+  font-size: clamp(1.8rem, 7vw, 2.6rem);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+}
+.card__front {
+  background: var(--ink-2);
+  border: 2px solid var(--gold);
+  color: var(--cream);
+  transform: rotateY(180deg);
+  font-weight: 700;
+  font-size: clamp(0.8rem, 3.4vw, 1.05rem);
+}
+.card:disabled {
+  cursor: default;
+}
+.card--mystery:focus-visible,
+.card:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.lanes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.lane {
+  background: rgba(0, 0, 0, 0.28);
+  border: 2px solid rgba(255, 209, 102, 0.18);
+  border-radius: 14px;
+  padding: 0.6rem;
+  min-height: 92px;
+}
+.lane__title {
+  font-family: var(--display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+.lane__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.lane .card {
+  width: 56px;
+  aspect-ratio: 3 / 4;
+}
+.lane .card__back {
+  font-size: 1.4rem;
+}
+.lane .card__front {
+  font-size: 0.6rem;
+}
+
+/* Anticlimactic completion spark — a single tiny poof, then nothing. */
+.spark {
+  position: fixed;
+  left: 50%;
+  top: 42%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+  pointer-events: none;
+  z-index: 1000;
+  animation: spark-poof 700ms ease-out forwards;
+}
+@keyframes spark-poof {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+  35% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -60%) scale(0.4); opacity: 0; }
+}
+.snooze-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+.card-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+.btn--mini {
+  min-height: 44px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.72rem;
+  border-radius: 9px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card__inner { transition: none; }
+  .spark { animation: none; opacity: 0; }
+  .readout { animation: none; }
+}
+
+/* Screen-reader-only: present in the a11y tree, visually hidden. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

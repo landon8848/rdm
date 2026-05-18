@@ -1,0 +1,19 @@
+{
+  "name": "Scrum Showdown",
+  "short_name": "Showdown",
+  "description": "Standup speaker-picker — spin the wheel to fairly pick who's up next.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1a1026",
+  "theme_color": "#1a1026",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

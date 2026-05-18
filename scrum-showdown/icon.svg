@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Scrum Showdown">
+  <rect width="512" height="512" rx="96" fill="#1a1026"/>
+  <g transform="translate(256 272)">
+    <circle r="168" fill="none" stroke="#ffd166" stroke-width="14"/>
+    <path d="M0 0 L0 -168 A168 168 0 0 1 145 84 Z" fill="#ffb02e"/>
+    <path d="M0 0 L145 84 A168 168 0 0 1 -145 84 Z" fill="#ff5d5d"/>
+    <path d="M0 0 L-145 84 A168 168 0 0 1 0 -168 Z" fill="#2ec4b6"/>
+    <circle r="26" fill="#1a1026" stroke="#ffd166" stroke-width="8"/>
+  </g>
+  <path d="M256 60 L286 116 L226 116 Z" fill="#ffd166"/>
+</svg>
