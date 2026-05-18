@@ -20,6 +20,7 @@ const deck = createDeck({ storage, roster, now: todayISO });
 
 const els = {
   current: $('#current-name'),
+  currentCard: $('#current-card'),
   srStatus: $('#sr-status'),
   controls: $('#speaker-controls'),
   done: $('#done'),
@@ -139,6 +140,23 @@ function render() {
   renderLane(els.laneAbsent, b.lanes.absent);
 
   els.current.textContent = b.current ? b.current.name : '';
+  els.currentCard.replaceChildren();
+  if (b.current) {
+    // Decorative glyph card shown alongside the prominent name. Not
+    // interactive (no flip/pick); the name is what's announced.
+    const card = document.createElement('div');
+    card.className = 'card card--current';
+    const inner = document.createElement('span');
+    inner.className = 'card__inner';
+    const back = document.createElement('span');
+    back.className = 'card__face card__back';
+    back.textContent = b.current.glyph;
+    const front = document.createElement('span');
+    front.className = 'card__face card__front';
+    inner.append(back, front);
+    card.append(inner);
+    els.currentCard.append(card);
+  }
   els.controls.hidden = !b.current;
   els.banner.hidden = !selection.isComplete();
 }

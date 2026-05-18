@@ -130,12 +130,33 @@ body {
   min-height: 1.2em;
   font-family: var(--display);
   font-weight: 800;
-  font-size: clamp(1.6rem, 7vw, 2.8rem);
+  font-size: clamp(2rem, 9vw, 3.6rem);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--gold);
   text-align: center;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
   animation: pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Current-speaker zone: glyph card alongside the prominent name.
+   Fixed height so the layout doesn't jump between picks. */
+.current {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: 140px;
+}
+.current__card {
+  flex: 0 0 auto;
+}
+.current__card .card {
+  width: 92px;
+}
+.card--current {
+  cursor: default;
 }
 .readout:empty {
   animation: none;
@@ -205,6 +226,12 @@ body {
   background: transparent;
   color: var(--cream);
   max-width: min(92vw, 420px);
+  /* The global `* { margin: 0 }` reset kills the UA's auto-centering for a
+     modal <dialog>; restore fixed + inset:0 + margin:auto to re-center. */
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
 }
 .modal::backdrop {
   background: rgba(10, 5, 18, 0.72);
@@ -393,6 +420,9 @@ input:focus-visible {
   gap: 0.7rem;
   width: 100%;
   margin: 0.4rem 0 0.2rem;
+  /* Reserve space so the board doesn't collapse as cards are picked. */
+  min-height: 220px;
+  align-content: start;
 }
 .card {
   aspect-ratio: 3 / 4;
@@ -428,7 +458,9 @@ input:focus-visible {
   padding: 0.3rem;
 }
 .card__back {
-  background: linear-gradient(150deg, var(--amber), var(--coral));
+  /* Muted blue pastel. For an orange-pastel variant instead, swap to:
+     linear-gradient(150deg, #f3c79b, #e0a878) */
+  background: linear-gradient(150deg, #9fb3cf, #7e93b4);
   color: var(--ink);
   font-size: clamp(1.8rem, 7vw, 2.6rem);
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
@@ -462,7 +494,11 @@ input:focus-visible {
   border: 2px solid rgba(255, 209, 102, 0.18);
   border-radius: 14px;
   padding: 0.6rem;
-  min-height: 92px;
+  /* Fixed height so lanes never resize as they fill — cards scroll
+     inside instead of pushing the page around. */
+  height: 252px;
+  display: flex;
+  flex-direction: column;
 }
 .lane__title {
   font-family: var(--display);
@@ -473,22 +509,40 @@ input:focus-visible {
   color: var(--muted);
   margin-bottom: 0.5rem;
   text-align: center;
+  flex: 0 0 auto;
 }
 .lane__cards {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.4rem;
-  justify-content: center;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+/* Lane cards are full-width rows so names sit on one line (no wrap). */
+.lane .card,
+.lane .snooze-card {
+  width: 100%;
 }
 .lane .card {
-  width: 56px;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: auto;
+  height: 40px;
+  border-radius: 9px;
+  padding: 0;
+}
+.lane .card__face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.55rem;
+  word-break: normal;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .lane .card__back {
-  font-size: 1.4rem;
+  font-size: 1.15rem;
 }
 .lane .card__front {
-  font-size: 0.6rem;
+  font-size: 0.9rem;
 }
 
 /* Anticlimactic completion spark — a single tiny poof, then nothing. */
@@ -518,6 +572,8 @@ input:focus-visible {
 .card-actions {
   display: flex;
   gap: 0.3rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .btn--mini {
   min-height: 44px;

@@ -22,7 +22,10 @@
       </header>
 
       <section class="arena" aria-label="Mystery card board">
-        <p id="current-name" class="readout" aria-live="polite"></p>
+        <div id="current" class="current" aria-live="polite">
+          <div id="current-card" class="current__card" aria-hidden="true"></div>
+          <p id="current-name" class="readout"></p>
+        </div>
         <p id="sr-status" class="sr-only" aria-live="polite"></p>
 
         <div id="speaker-controls" class="controls" hidden>
