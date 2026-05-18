@@ -529,8 +529,20 @@ input:focus-visible {
   overflow-y: auto;
   align-content: start;
 }
+/* A snooze entry spans the full lane row: a normal-sized flip card with
+   its Resume/Done actions beside it. The inner .card needs an explicit
+   width — it isn't a grid item here (the .snooze-card wrapper is), and
+   container-type:size would otherwise collapse it to zero. */
 .lane .snooze-card {
+  grid-column: 1 / -1;
   width: 100%;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.snooze-card .card {
+  width: 52px;
+  flex: 0 0 auto;
 }
 
 /* Anticlimactic completion spark — a single tiny poof, then nothing. */
