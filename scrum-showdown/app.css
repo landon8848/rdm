@@ -96,7 +96,7 @@ body {
 .marquee__title {
   font-family: var(--display);
   font-weight: 800;
-  font-size: clamp(2rem, 9vw, 3.4rem);
+  font-size: clamp(1.4rem, 5.5vw, 2.2rem);
   line-height: 0.95;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -145,9 +145,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: 1.2rem;
   width: 100%;
-  min-height: 140px;
+  min-height: 150px;
+  padding: 1.2rem 0 1.8rem;
 }
 .current__card {
   flex: 0 0 auto;
@@ -416,12 +417,13 @@ input:focus-visible {
 /* ---- Mystery card board ---- */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 0.7rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
   width: 100%;
-  margin: 0.4rem 0 0.2rem;
+  /* Extra breathing room below the active-speaker zone. */
+  margin: 1.6rem 0 0.2rem;
   /* Reserve space so the board doesn't collapse as cards are picked. */
-  min-height: 220px;
+  min-height: 260px;
   align-content: start;
 }
 .card {
@@ -484,7 +486,7 @@ input:focus-visible {
 
 .lanes {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 0.6rem;
   width: 100%;
   margin-top: 0.5rem;
@@ -496,7 +498,7 @@ input:focus-visible {
   padding: 0.6rem;
   /* Fixed height so lanes never resize as they fill — cards scroll
      inside instead of pushing the page around. */
-  height: 252px;
+  height: 168px;
   display: flex;
   flex-direction: column;
 }
@@ -512,20 +514,21 @@ input:focus-visible {
   flex: 0 0 auto;
 }
 .lane__cards {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.4rem;
   flex: 1 1 auto;
   overflow-y: auto;
+  align-content: start;
 }
-/* Lane cards are full-width rows so names sit on one line (no wrap). */
+/* Two cards per row; each fills its cell so names stay on one line. */
 .lane .card,
 .lane .snooze-card {
   width: 100%;
 }
 .lane .card {
   aspect-ratio: auto;
-  height: 40px;
+  height: 44px;
   border-radius: 9px;
   padding: 0;
 }
